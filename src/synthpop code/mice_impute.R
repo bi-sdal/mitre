@@ -7,7 +7,7 @@
 library(dplyr)
 library(mice)
 
-load("./data/working/cleaned_CL_ACS.RData")
+load("./data/mitre/working/cleaned_CL_ACS.RData")
 
 # -----------------------------------------------------------------------
 # threshhold CoreLogic data to maximum in PUMS
@@ -171,7 +171,7 @@ for(i in 1:nrow(imputed_income)){
 
 income_draws_plot <- as.data.frame(cbind(income=income_draws[,1],BlockGroup=CLdata$BlockGroup))
 
-png("marginal_with_joint_imputed.png",width=800,height=600)
+#png("marginal_with_joint_imputed.png",width=800,height=600)
 par(mfrow=c(5,4))
 par(mar=c(3,3,1,1))
 samp_bg <- sort(sample(unique(income_draws_plot$BlockGroup),20))
@@ -186,7 +186,7 @@ for(i in 1:20){
   lines(xs,ys,type="l",xlab="Income",ylab="Density",main="",lwd=2,col="red")
   text(paste(bg),x=3.3e5,y=max(ys)*.75,font=2,cex=1.5)
 }
-dev.off()
+#dev.off()
 
 # -----------------------------------------------------------------------
 # plot imputed conditional income (from mice) for a single draw by blockgroup (histogram) vs marginal distributions
@@ -194,7 +194,7 @@ dev.off()
 
 income_conditional_plot <- as.data.frame(cbind(income=imputed_draws[,1]^2,BlockGroup=CLdata$BlockGroup))
 
-png("marginal_with_mice_draw.png",width=800,height=600)
+#png("marginal_with_mice_draw.png",width=800,height=600)
 par(mfrow=c(5,4))
 par(mar=c(3,3,1,1))
 #samp_bg <- sort(sample(unique(income_draws_plot$BlockGroup),20))
@@ -209,14 +209,14 @@ for(i in 1:20){
   lines(xs,ys,type="l",xlab="Income",ylab="Density",main="",lwd=2,col="red")
   text(paste(bg),x=3.3e5,y=max(ys)*.75,font=2,cex=1.5)
 }
-dev.off()
+#dev.off()
 
 
 # -----------------------------------------------------------------------
 # plot joint distributions of imputed income, value, taxes vs PUMS
 # -----------------------------------------------------------------------
 
-png("conditional_imputed.png",width=800,height=800)
+#png("conditional_imputed.png",width=800,height=800)
 CL_PUMS_plot <- CL_PUMS
 CL_PUMS_plot$HINCP[CL_PUMS_plot$source=="CL"] <- income_draws[,1]
 CL_PUMS_plot$color <- "black"
@@ -229,7 +229,7 @@ par(xpd=FALSE)
 pairs(~HINCP+VALP+TAXP2,data=CL_PUMS_plot,col=CL_PUMS_plot$color,pch=20,cex=0.5)
 par(xpd=TRUE)
 legend(x=0,y=1, legend=c("PUMS","CoreLogic (Imputed HINCP)"), fill=c("black","red"),cex=1.5)
-dev.off()
+#dev.off()
 
 
 
