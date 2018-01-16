@@ -7,8 +7,7 @@
 library(dplyr)
 library(mice)
 
-setwd("/home/sdal/projects/hud_census/analysis/Josh/synthetic population/person variables/")
-load("cleaned_CL_ACS.RData")
+load("./data/working/cleaned_CL_ACS.RData")
 
 # -----------------------------------------------------------------------
 # threshhold CoreLogic data to maximum in PUMS
@@ -21,7 +20,7 @@ CLdata$TOTAL.VALUE.CALCULATED[CLdata$TOTAL.VALUE.CALCULATED > max(PUMS$VALP)] <-
 CLdata$TAX.AMOUNT[CLdata$TAX.AMOUNT > max(PUMS$TAXP2)] <- max(PUMS$TAXP2)
 
 # -----------------------------------------------------------------------
-# generate 1000 conditional samples with mice
+# generate 1000 (nsamp) conditional samples with mice
 # -----------------------------------------------------------------------
 
 # create combined data frame
@@ -29,18 +28,21 @@ CLdata$source <- "CL"
 CLdata$HINCP <- NA
 PUMS$source <- "PUMS"
 PUMS$BlockGroup <- NA
-CL_PUMS <- rbind( CLdata %>% select(HINCP,VALP=TOTAL.VALUE.CALCULATED,TAXP2=TAX.AMOUNT,BlockGroup,source),
-                  PUMS %>% select(HINCP,VALP,TAXP2,BlockGroup,source) )
+CL_PUMS <- rbind( CLdata %>% dplyr::select(HINCP,VALP=TOTAL.VALUE.CALCULATED,TAXP2=TAX.AMOUNT,BlockGroup,source),
+                  PUMS %>% dplyr::select(HINCP,VALP,TAXP2,BlockGroup,source) )
 # transform income to satisfy linear regression assumptions
 CL_PUMS$sqrtHINCP <- sqrt(CL_PUMS$HINCP)
 
 # impute using Bayesian linear regression; add the imputed values to data frame
 # be careful of memory constraints on number of draws (100 draws is 360Mb)
-mice.out <- mice(data=CL_PUMS%>%select(sqrtHINCP,VALP,TAXP2), m=100, method="norm")
-imputed_draws <- mice.out$imp$sqrtHINCP[,1:100]
-for(i in 2:10){ #1000 total draws
-  mice.out <- mice(data=CL_PUMS%>%select(sqrtHINCP,VALP,TAXP2), m=100, method="norm")
-  imputed_draws <- cbind(imputed_draws,mice.out$imp$sqrtHINCP[,1:100])
+
+nsamp = 10
+mice.out <- mice(data=CL_PUMS %>% dplyr::select(sqrtHINCP,VALP,TAXP2), m = nsamp, method="norm")
+imputed_draws <- mice.out$imp$sqrtHINCP
+
+for(i in 2:10){ #10 * nsamp total draws, this is done in a loop because doing it all at once (like m = 10 * nsamp in the function) can cause memory headaches
+  mice.out <- mice(data=CL_PUMS %>% dplyr::select(sqrtHINCP,VALP,TAXP2), m = nsamp, method="norm")
+  imputed_draws <- cbind(imputed_draws,mice.out$imp$sqrtHINCP)
 }
 imputed_draws[imputed_draws < 0] <- 0 # restrict household income to be positive
 
@@ -50,7 +52,7 @@ imputed_draws[imputed_draws < 0] <- 0 # restrict household income to be positive
 
 # use counts from ACS table to estmiate a piecewise uniform distribution by blockgroup
 # fit an exponential tail when income is $200,000+
-income_marginal <- read.csv("ACS_13_5YR_B19001_with_ann.csv",header=TRUE,skip=1)[,c(1:3,seq(6,37,by=2))]
+income_marginal <- read.csv("./data/original/synthpop data/ACS_13_5YR_B19001_with_ann.csv",header=TRUE,skip=1)[,c(1:3,seq(6,37,by=2))]
 income_marginal$BlockGroup <-  as.numeric(substr(income_marginal$Id2,6,12))
 income_marginal <- cbind(BlockGroup=income_marginal$BlockGroup,income_marginal[,4:19])
 income_marginal <- income_marginal %>% filter(BlockGroup != 9801001) # filter out blockgroup with 0 observations
@@ -95,6 +97,7 @@ lines(xs, mle_lambda*exp(-mle_lambda*(xs-2e5)),col=2,lwd=2)
 
 # write a function for the marginal distribution for each blockgroup; make plots
 # vectorize this function (vector of inputs for income and blockgroup)
+
 marginal_dist <- function(income,blockgroup){
   # get the piecewise uniform density, area_exp corresponding to this blockgroup
   ind <- match(blockgroup,marginal_uniform_density_mat$BlockGroup)
@@ -136,7 +139,7 @@ for(i in 1:20){
 }
 
 # -----------------------------------------------------------------------
-# draw imputed samples from the marginal distribution (independantly for each household)
+# draw imputed samples from the marginal distribution (independently for each household)
 # -----------------------------------------------------------------------
 
 ndraws <- 20
@@ -147,7 +150,8 @@ marginal_samp_prob <- matrix(NA,nrow=nrow(imputed_draws),ncol=ncol(imputed_draws
 
 for(i in 1:ncol(imputed_draws)){
   marginal_weights[,i] <- marginal_dist(income=imputed_income[,i],blockgroup=CLdata$BlockGroup) # likelihoods
-  marginal_samp_prob[,i] <- marginal_weights[,i]/sum(marginal_weights[,i])
+  #marginal_samp_prob[,i] <- marginal_weights[,i]/sum(marginal_weights[,i])
+  marginal_samp_prob[,i] <- marginal_weights[,i]
   if(i%%100==0){print(i)}
 }
 

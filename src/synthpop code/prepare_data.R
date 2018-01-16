@@ -1,8 +1,8 @@
 # files:
-# CoreLogic housing data: Arlington_CL_2013_Data.csv
-# PUMS household microdata: ss14hva.csv
+# CoreLogic housing data: Arlington_CL_2013_Data.csv, full pop of real estate data for arlington houses
+# PUMS household microdata: ss14hva.csv, for all of virginia (2009-2014 5 year estimates)
 # published ACS table for household income by block group:
-#     ACS_13_5YR_B19001_with_ann.csv
+#     ACS_13_5YR_B19001_with_ann.csv, this is the variable we impute
 
 # CoreLogic housing data is our universe for Arlington.
 # It has measurements of property value and taxes paid; we will impute household income.
@@ -15,11 +15,11 @@
 library(dplyr)
 library(MASS)
 
-setwd("~/sdal/projects/hud/hud_census/analysis/Josh/synthetic population/person variables/")
+dataDir = "./data/mitre/original/synthpop data/"
 
 # read in CoreLogic data for Arlington; subset by single family and by variables of interest
 # including home value (TOTAL.VALUE.CALCULATED), taxes paid (TAX.AMOUNT)
-CLdata<-read.csv("~/sdal/projects/hud/hud_census/data/CoreLogic/3_TIDY/Arlington_CL_2013_Data.csv") %>%
+CLdata<-read.csv(paste0(dataDir, "Arlington_CL_2013_Data.csv")) %>%
   filter(PropertyType!="Multifamily",!is.na(TOTAL.VALUE.CALCULATED),!is.na(TAX.AMOUNT),!is.na(BlockGroup_rec)) %>%
   dplyr::select(BlockGroup=BlockGroup_rec,TOTAL.VALUE.CALCULATED,TAX.AMOUNT,LATITUDE,LONGITUDE) %>%
   arrange(BlockGroup)
@@ -27,12 +27,12 @@ CLdata<-read.csv("~/sdal/projects/hud/hud_census/data/CoreLogic/3_TIDY/Arlington
 # read in ACS pums for Arlington (two PUMAs)
 # subset single family and by variables of interest
 # including household income (HINCP), home value (VALP), taxes paid (TAXP)
-PUMS <- read.csv("~/sdal/projects/hud/hud_census/analysis/Josh/synthetic population/PUMS/ss14hva.csv") %>%
+PUMS <- read.csv(paste0(dataDir, "ss14hva.csv")) %>%
   dplyr::select(PUMA10,HINCP,VALP,TAXP) %>%
   filter(PUMA10 %in% c(1301,1302), !is.na(TAXP),!is.na(VALP),!is.na(HINCP), VALP < 1500000, HINCP >= 0)
 
 # ------------------------------------------------------------------------------------------------
-# TAXP is binned; to use it as a predictor in our model, convert it into $$ by taking the center value of each bin
+# TAXP is binned. To use it as a predictor in our model we convert it into $$ by taking the center value of each bin.
 # ------------------------------------------------------------------------------------------------
 
 PUMS$TAXP2[PUMS$TAXP==1] <- 0
@@ -114,7 +114,7 @@ PUMS$TAXP2[PUMS$TAXP==68 & !is.na(PUMS$TAXP)] <- sample(x=samp_taxes,size=sum(PU
 # ------------------------------------------------------------------------------------------------
 
 # ACS table: B19001 (household income)
-income_marginal <- read.csv("ACS_13_5YR_B19001_with_ann.csv",header=TRUE,skip=1)[,c(1:3,seq(6,37,by=2))]
+income_marginal <- read.csv(paste0(dataDir, "ACS_13_5YR_B19001_with_ann.csv"),header=TRUE,skip=1)[,c(1:3,seq(6,37,by=2))]
 
 # income is binned; convert it into $$ by taking the center value of each bin
 for(i in 1:nrow(income_marginal)){ # loop over blockgroup
@@ -151,5 +151,5 @@ ACS_marginals <- ACS_marginals %>% filter(BlockGroup %in% CLdata$BlockGroup)
 CLdata <- merge(CLdata,ACS_marginals,by="BlockGroup")
 
 # save CLdata, PUMS, ACS_marginals data frames to use in inference
-save(CLdata,PUMS,ACS_marginals,file = "cleaned_CL_ACS.RData")
+save(CLdata,PUMS,ACS_marginals,file = "./data/mitre/working/cleaned_CL_ACS.RData")
 
