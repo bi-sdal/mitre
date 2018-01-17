@@ -4,6 +4,8 @@ library(stringr)
 library(dplyr)
 library(ggplot2)
 
+# Loading data ----
+
 # df <- read_table('data/mitre/working/q1_files_and_sizes/files_and_sizes.txt', col_names = c('size', 'filepath'))
 # df <- na.omit(df)
 
@@ -23,6 +25,8 @@ head(ldf)
 
 ldf$size <- as.numeric(ldf$size)
 head(ldf)
+
+# Dropping invalid files and directories ----
 
 s <- dim(ldf)
 ldf <- ldf[!str_detect(ldf$filepath, '\\.Rproj\\.user'), ]
@@ -50,6 +54,8 @@ print(s - e)
 # }
 
 # ldf <- head(ldf, 5000)
+
+# Add project group info ----
 
 ## add group to files
 
@@ -100,6 +106,7 @@ table(ldf$owf)
 
 addmargins(table(ldf$group, ldf$owf))
 
+# File extensions ----
 
 ## Get file extension
 
@@ -114,6 +121,7 @@ missing <- ldf[is.na(ldf$group), ]
 
 addmargins(sort(table(missing$fext)))
 
+# File counts and size ----
 
 ## Some analysis things
 
@@ -149,6 +157,8 @@ ggplot(data = na.omit(ct_size), aes(x = group, y = total_size/(2^20), fill = tot
   theme(text = element_text(size = 20))
 dev.off()
 
+# File extensions and size ----
+
 ## total number of bytes by file extension
 
 ext_size <- ldf %>%
@@ -176,6 +186,8 @@ ggplot(data = ext_size, aes(x = fext, y = total_size)) +
 
 
 ggplot(data = ext_size, aes(x = fext, y = total_size)) + geom_boxplot() + coord_flip()
+
+# Overal decriptive calculations ----
 
 sum(ldf$size) / 1e+9 # number of gb of data
 
