@@ -15,7 +15,7 @@
 library(dplyr)
 library(MASS)
 
-dataDir = "./data/mitre/original/synthpop data/"
+dataDir = "./data/mitre/original/synthpop_data/"
 
 # read in CoreLogic data for Arlington; subset by single family and by variables of interest
 # including home value (TOTAL.VALUE.CALCULATED), taxes paid (TAX.AMOUNT)
