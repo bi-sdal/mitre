@@ -54,11 +54,11 @@ ldf[str_detect(ldf$filepath, 'housing'), 'group'] <- 'Arlington Housing Data'
 
 ldf[str_detect(ldf$filepath, 'fire'), 'group'] <- 'Fire'
 
-ldf[str_detect(ldf$filepath, 'gis'), 'group'] <- 'GIS'
+ldf[str_detect(ldf$filepath, 'gis'), 'group'] <- 'Shapefiles'
 
 ldf[str_detect(ldf$filepath, 'police'), 'group'] <- 'Police'
 
-ldf[str_detect(ldf$filepath, 'ems'), 'group'] <- 'EMS'
+ldf[str_detect(ldf$filepath, 'ems'), 'group'] <- 'Emergency Medical Services'
 
 ldf[str_detect(ldf$filepath, 'cad'), 'group'] <- 'Computer Aided Dispatch'
 
@@ -69,7 +69,7 @@ ldf[str_detect(ldf$filepath, 'arlington_alerts'), 'group'] <- 'Arlington Alerts 
 ldf[str_detect(ldf$filepath, 'arlington_dhs'), 'group'] <- 'Department of Human Services'
 ldf[str_detect(ldf$filepath, 'dhs_link_char'), 'group'] <- 'Department of Human Services'
 
-ldf[str_detect(ldf$filepath, 'arlington_qecw'), 'group'] <- 'Country Building Water Useage'
+ldf[str_detect(ldf$filepath, 'arlington_qecw'), 'group'] <- 'County Building Water Useage'
 
 # commm_arlington data is all from public data
 # ldf[str_detect(ldf$filepath, 'comm_arlington'), 'group'] <- 'comm_arlington'
