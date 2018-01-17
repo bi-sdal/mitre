@@ -1,13 +1,7 @@
 library(readr)
 library(stringr)
-#library(data.table)
-library(dplyr)
-library(ggplot2)
 
 # Loading data ----
-
-# df <- read_table('data/mitre/working/q1_files_and_sizes/files_and_sizes.txt', col_names = c('size', 'filepath'))
-# df <- na.omit(df)
 
 # using read_lines becuase read_table was causing issues
 flines <- read_lines('data/mitre/working/q1_files_and_sizes/files_and_sizes.txt')
@@ -35,25 +29,19 @@ ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr][Dd][Aa][Tt][Aa]'), ]
 ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr][Dd][Ss]'), ]
 ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr][Dd][Aa]'), ]
 ldf <- ldf[!str_detect(ldf$filepath, 'total'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Jj][Pp][Ee]?[Gg]'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Pp][Nn][Gg]'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr]$'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr][Dd][Xx]$'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr][Dd][Bb]$'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr][Mm][Dd]$'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Hh][Tt][Mm][Ll]$'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr]history$'), ]
 ldf <- ldf[ldf$size > 0, ]
 e <- dim(ldf)
 
 # number of rows dropped
 print(s - e)
-
-# file_path_group <- function(filepath) {
-#   if (str_detect(filepath, pattern = '^/home/sdal/projects/arl/arlington911/data/original/corelogic/')) {
-#     return("corelogic")
-#   } else if (str_detect(filepath, pattern = '^/home/sdal/projects/arl/arlington911/data/original/fire/031716')) {
-#     return("fire incident")
-#   } else if (str_detect(filepath, pattern = '^/home/sdal/projects/arl/arlington911/data/original/fire/Operation_FireSafe')) {
-#     return("operation firesafe")
-#   } else {
-#     return("uncategorized")
-#   }
-# }
-
-# ldf <- head(ldf, 5000)
 
 # Add project group info ----
 
@@ -61,36 +49,36 @@ print(s - e)
 
 ldf$group <- NA
 
-ldf[str_detect(ldf$filepath, 'corelogic'), 'group'] <- 'corelogic'
-ldf[str_detect(ldf$filepath, 'housing'), 'group'] <- 'housing'
+ldf[str_detect(ldf$filepath, 'corelogic'), 'group'] <- 'Corelogic Housing Data'
+ldf[str_detect(ldf$filepath, 'housing'), 'group'] <- 'Arlington Housing Data'
 
-ldf[str_detect(ldf$filepath, 'fire'), 'group'] <- 'fire'
+ldf[str_detect(ldf$filepath, 'fire'), 'group'] <- 'Fire'
 
-ldf[str_detect(ldf$filepath, 'gis'), 'group'] <- 'gis'
+ldf[str_detect(ldf$filepath, 'gis'), 'group'] <- 'GIS'
 
-ldf[str_detect(ldf$filepath, 'police'), 'group'] <- 'police'
+ldf[str_detect(ldf$filepath, 'police'), 'group'] <- 'Police'
 
-ldf[str_detect(ldf$filepath, 'ems'), 'group'] <- 'ems'
+ldf[str_detect(ldf$filepath, 'ems'), 'group'] <- 'EMS'
 
-ldf[str_detect(ldf$filepath, 'cad'), 'group'] <- 'cad'
+ldf[str_detect(ldf$filepath, 'cad'), 'group'] <- 'Computer Aided Dispatch'
 
-ldf[str_detect(ldf$filepath, 'eoc'), 'group'] <- 'eoc'
+ldf[str_detect(ldf$filepath, 'eoc'), 'group'] <- 'Emergency Operations Center'
 
-ldf[str_detect(ldf$filepath, 'arlington_alerts'), 'group'] <- 'arlington_alerts'
+ldf[str_detect(ldf$filepath, 'arlington_alerts'), 'group'] <- 'Arlington Alerts User Activity'
 
-ldf[str_detect(ldf$filepath, 'arlington_dhs'), 'group'] <- 'arlington_dhs'
-ldf[str_detect(ldf$filepath, 'dhs_link_char'), 'group'] <- 'arlington_dhs'
+ldf[str_detect(ldf$filepath, 'arlington_dhs'), 'group'] <- 'Department of Human Services'
+ldf[str_detect(ldf$filepath, 'dhs_link_char'), 'group'] <- 'Department of Human Services'
 
-ldf[str_detect(ldf$filepath, 'arlington_qecw'), 'group'] <- 'arlington_qecw'
+ldf[str_detect(ldf$filepath, 'arlington_qecw'), 'group'] <- 'Country Building Water Useage'
 
-ldf[str_detect(ldf$filepath, 'comm_arlington'), 'group'] <- 'comm_arlington'
+# commm_arlington data is all from public data
+# ldf[str_detect(ldf$filepath, 'comm_arlington'), 'group'] <- 'comm_arlington'
 
-ldf[str_detect(ldf$filepath, 'synth_pop'), 'group'] <- 'synth_pop'
+ldf[str_detect(ldf$filepath, 'synth_pop'), 'group'] <- 'Corelogic Synthetic Data'
 
-ldf[str_detect(ldf$filepath, 'response_time'), 'group'] <- 'response_time'
+ldf[str_detect(ldf$filepath, 'response_time'), 'group'] <- 'Fire Response Time'
 
-
-ldf[str_detect(ldf$filepath, 'data_dict'), 'group'] <- 'data_dict'
+ldf[str_detect(ldf$filepath, 'data_dict'), 'group'] <- 'Data Dictionaries'
 
 table(ldf$group, useNA = 'always')
 
@@ -104,7 +92,7 @@ ldf[str_detect(ldf$filepath, 'final'), 'owf'] <- 'final'
 
 table(ldf$owf)
 
-addmargins(table(ldf$group, ldf$owf))
+addmargins(table(ldf$group, ldf$owf, useNA = 'always'))
 
 # File extensions ----
 
@@ -114,81 +102,13 @@ ldf$fext <- sapply(X = ldf$filepath, tools::file_ext)
 
 table(ldf$fext)
 
-addmargins(table(ldf$fext, ldf$owf))
+addmargins(table(ldf$fext, ldf$owf, useNA = 'always'))
 
 
 missing <- ldf[is.na(ldf$group), ]
 
-addmargins(sort(table(missing$fext)))
+addmargins(sort(table(missing$fext, useNA = 'always')))
 
-# File counts and size ----
+# Save out the file ----
 
-## Some analysis things
-
-## number of files by group and total number of bytes
-ct_size <- ldf %>% 
-  group_by(group) %>%
-  summarize(
-    count = n(),
-    total_size = sum(size)) %>%
-  arrange(total_size)
-
-ct_size
-
-ct_size$group <- factor(ct_size$group, levels = ct_size$group[order(ct_size$total_size)])
-
-
-#ct_size$mb <- ct_size$total_size / 1048576
-
-pdf("./output/projectsize.pdf", width = 13.33, height = 7.5)
-ggplot(data = na.omit(ct_size), aes(x = group, y = total_size/(2^20), fill = total_size/(2^20))) +
-  geom_bar(stat = 'identity') +
-  #geom_hline(yintercept = 10e+9, show.legend = T) + # 10 gb
-  #geom_hline(yintercept = 1e+9, show.legend = T) +  # 1 gb
-  #geom_hline(yintercept = 5e+8) +  # 500 mb
-  #geom_hline(yintercept = 1e+6, show.legend = T) +  # 1 mb
-  #scale_y_log10() +
-  coord_flip() +
-  theme_minimal() + 
-  labs(y = "Total Size in MB", 
-       x = "Project Directory", 
-       title = "Storage Requirements for Selected SDAL Projects") + 
-  guides(fill = F) + 
-  theme(text = element_text(size = 20))
-dev.off()
-
-# File extensions and size ----
-
-## total number of bytes by file extension
-
-ext_size <- ldf %>%
-  group_by(fext) %>%
-  summarize(
-    count = n(),
-    total_size = sum(size)
-  ) %>%
-  arrange(total_size)
-
-ext_size$fext <- factor(ext_size$fext, levels = ext_size$fext[order(ext_size$total_size)])
-
-# View(ext_size)
-
-ggplot(data = ext_size, aes(x = fext, y = total_size)) +
-  geom_bar(stat = 'identity') +
-  #geom_hline(yintercept = 10e+9) + # 10 gb
-  #geom_hline(yintercept = 1e+9) +  # 1 gb
-  #geom_hline(yintercept = 5e+8) +  # 500 mb
-  #geom_hline(yintercept = 1e+6) +  # 1 mb
-  #scale_y_log10() +
-  coord_flip() +
-  theme_minimal()
-
-
-
-ggplot(data = ext_size, aes(x = fext, y = total_size)) + geom_boxplot() + coord_flip()
-
-# Overal decriptive calculations ----
-
-sum(ldf$size) / 1e+9 # number of gb of data
-
-max(ldf$size) / 1e+9
+saveRDS(ldf, file = 'data/mitre/working/q1_files_and_sizes/files_sizes_group_owf.RDS')
