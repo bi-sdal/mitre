@@ -9,21 +9,33 @@ library(ggplot2)
 
 # using read_lines becuase read_table was causing issues
 flines <- read_lines('data/mitre/working/q1_files_and_sizes/files_and_sizes.txt')
-ldf <- as.data.frame(flines)
+ldf <- as.data.frame(flines, stringsAsFactors = FALSE)
 ldf <- na.omit(ldf)
-splits <- str_split_fixed(str_trim(ldf$flines), pattern = ' ', n = 2)
+splits <- as.data.frame(str_split_fixed(str_trim(ldf$flines), pattern = ' ', n = 2), stringsAsFactors = FALSE)
+
+head(splits)
 
 ldf <- cbind(ldf, splits)
+head(ldf)
 
 names(ldf) <- c('original', 'size', 'filepath')
+head(ldf)
+
 ldf$size <- as.numeric(ldf$size)
 head(ldf)
 
-dim(ldf)
+s <- dim(ldf)
 ldf <- ldf[!str_detect(ldf$filepath, '\\.Rproj\\.user'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.git'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr][Dd][Aa][Tt][Aa]'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr][Dd][Ss]'), ]
+ldf <- ldf[!str_detect(ldf$filepath, '\\.[Rr][Dd][Aa]'), ]
 ldf <- ldf[!str_detect(ldf$filepath, 'total'), ]
-ldf <- ldf[ldf$size > 1, ]
-dim(ldf)
+ldf <- ldf[ldf$size > 0, ]
+e <- dim(ldf)
+
+# number of rows dropped
+print(s - e)
 
 # file_path_group <- function(filepath) {
 #   if (str_detect(filepath, pattern = '^/home/sdal/projects/arl/arlington911/data/original/corelogic/')) {
@@ -76,10 +88,6 @@ ldf[str_detect(ldf$filepath, 'data_dict'), 'group'] <- 'data_dict'
 
 table(ldf$group, useNA = 'always')
 
-
-missing <- ldf[is.na(ldf$group),]
-
-
 ## add original working final status
 
 ldf$owf <- NA
@@ -102,6 +110,11 @@ table(ldf$fext)
 addmargins(table(ldf$fext, ldf$owf))
 
 
+missing <- ldf[is.na(ldf$group), ]
+
+addmargins(sort(table(missing$fext)))
+
+
 ## Some analysis things
 
 ## number of files by group and total number of bytes
@@ -121,8 +134,10 @@ ct_size$group <- factor(ct_size$group, levels = ct_size$group[order(ct_size$tota
 
 ggplot(data = ct_size, aes(x = group, y = total_size)) +
   geom_bar(stat = 'identity') +
-  geom_hline(yintercept = 1e+9) +
-  geom_hline(yintercept = 1e+6) +
+  geom_hline(yintercept = 10e+9) + # 10 gb
+  geom_hline(yintercept = 1e+9) +  # 1 gb
+  geom_hline(yintercept = 5e+8) +  # 500 mb
+  geom_hline(yintercept = 1e+6) +  # 1 mb
   scale_y_log10() +
   coord_flip() +
   theme_minimal()
@@ -140,21 +155,22 @@ ext_size <- ldf %>%
 
 ext_size$fext <- factor(ext_size$fext, levels = ext_size$fext[order(ext_size$total_size)])
 
-View(ext_size)
+# View(ext_size)
 
 ggplot(data = ext_size, aes(x = fext, y = total_size)) +
   geom_bar(stat = 'identity') +
-  geom_hline(yintercept = 1e+9) +
-  geom_hline(yintercept = 1e+6) +
+  geom_hline(yintercept = 10e+9) + # 10 gb
+  geom_hline(yintercept = 1e+9) +  # 1 gb
+  geom_hline(yintercept = 5e+8) +  # 500 mb
+  geom_hline(yintercept = 1e+6) +  # 1 mb
   scale_y_log10() +
   coord_flip() +
   theme_minimal()
 
 
 
-ggplot(data = ldf, aes(x = size)) + geom_histogram() +
-  geom_vline(xintercept = 1e+9) +
-  geom_vline(xintercept = 1e+6)
+ggplot(data = ext_size, aes(x = fext, y = total_size)) + geom_boxplot() + coord_flip()
 
+sum(ldf$size) / 1e+9 # number of gb of data
 
-sum(ldf$size)
+max(ldf$size) / 1e+9
