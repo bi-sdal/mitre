@@ -132,16 +132,22 @@ ct_size$group <- factor(ct_size$group, levels = ct_size$group[order(ct_size$tota
 
 #ct_size$mb <- ct_size$total_size / 1048576
 
-ggplot(data = ct_size, aes(x = group, y = total_size)) +
+pdf("./output/projectsize.pdf", width = 13.33, height = 7.5)
+ggplot(data = na.omit(ct_size), aes(x = group, y = total_size/(2^20), fill = total_size/(2^20))) +
   geom_bar(stat = 'identity') +
-  geom_hline(yintercept = 10e+9) + # 10 gb
-  geom_hline(yintercept = 1e+9) +  # 1 gb
-  geom_hline(yintercept = 5e+8) +  # 500 mb
-  geom_hline(yintercept = 1e+6) +  # 1 mb
-  scale_y_log10() +
+  #geom_hline(yintercept = 10e+9, show.legend = T) + # 10 gb
+  #geom_hline(yintercept = 1e+9, show.legend = T) +  # 1 gb
+  #geom_hline(yintercept = 5e+8) +  # 500 mb
+  #geom_hline(yintercept = 1e+6, show.legend = T) +  # 1 mb
+  #scale_y_log10() +
   coord_flip() +
-  theme_minimal()
-
+  theme_minimal() + 
+  labs(y = "Total Size in MB", 
+       x = "Project Directory", 
+       title = "Storage Requirements for Selected SDAL Projects") + 
+  guides(fill = F) + 
+  theme(text = element_text(size = 20))
+dev.off()
 
 ## total number of bytes by file extension
 
@@ -159,11 +165,11 @@ ext_size$fext <- factor(ext_size$fext, levels = ext_size$fext[order(ext_size$tot
 
 ggplot(data = ext_size, aes(x = fext, y = total_size)) +
   geom_bar(stat = 'identity') +
-  geom_hline(yintercept = 10e+9) + # 10 gb
-  geom_hline(yintercept = 1e+9) +  # 1 gb
-  geom_hline(yintercept = 5e+8) +  # 500 mb
-  geom_hline(yintercept = 1e+6) +  # 1 mb
-  scale_y_log10() +
+  #geom_hline(yintercept = 10e+9) + # 10 gb
+  #geom_hline(yintercept = 1e+9) +  # 1 gb
+  #geom_hline(yintercept = 5e+8) +  # 500 mb
+  #geom_hline(yintercept = 1e+6) +  # 1 mb
+  #scale_y_log10() +
   coord_flip() +
   theme_minimal()
 
