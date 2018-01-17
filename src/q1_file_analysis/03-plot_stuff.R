@@ -22,21 +22,21 @@ ct_size$group <- factor(ct_size$group, levels = ct_size$group[order(ct_size$tota
 
 #ct_size$mb <- ct_size$total_size / 1048576
 
+ct_size_plot <- na.omit(ct_size)
+
 pdf("./output/projectsize.pdf", width = 13.33, height = 7.5)
-ggplot(data = na.omit(ct_size), aes(x = group, y = total_size/(2^20), fill = total_size/(2^20))) +
+ggplot(data = ct_size_plot, aes(x = group,
+                                y = total_size/(2^20),
+                                fill = total_size/(2^20))) +
   geom_bar(stat = 'identity') +
-  #geom_hline(yintercept = 10e+9, show.legend = T) + # 10 gb
-  #geom_hline(yintercept = 1e+9, show.legend = T) +  # 1 gb
-  #geom_hline(yintercept = 5e+8) +  # 500 mb
-  #geom_hline(yintercept = 1e+6, show.legend = T) +  # 1 mb
-  #scale_y_log10() +
-  coord_flip() +
+  annotate("text", x = ct_size_plot$group, y = 10000,
+           label = paste0("(", ct_size_plot$count, ")"), hjust = 1, size = 5) +
   theme_minimal() + 
-  labs(y = "Total Size in MB", 
-       x = "Project Directory", 
-       title = "Storage Requirements for Selected SDAL Projects") + 
+  labs(y = "Total Size in MB (Number of Files)", 
+       x = "Project Directory") + 
   guides(fill = F) + 
-  theme(text = element_text(size = 20))
+  theme(text = element_text(size = 20)) +
+  coord_flip()
 dev.off()
 
 # File extensions and size ----
