@@ -36,7 +36,7 @@ CL_PUMS$sqrtHINCP <- sqrt(CL_PUMS$HINCP)
 # impute using Bayesian linear regression; add the imputed values to data frame
 # be careful of memory constraints on number of draws (100 draws is 360Mb)
 
-nsamp = 10
+nsamp = 3
 mice.out <- mice(data=CL_PUMS %>% dplyr::select(sqrtHINCP,VALP,TAXP2), m = nsamp, method="norm")
 imputed_draws <- mice.out$imp$sqrtHINCP
 
@@ -52,7 +52,8 @@ imputed_draws[imputed_draws < 0] <- 0 # restrict household income to be positive
 
 # use counts from ACS table to estmiate a piecewise uniform distribution by blockgroup
 # fit an exponential tail when income is $200,000+
-income_marginal <- read.csv("./data/original/synthpop data/ACS_13_5YR_B19001_with_ann.csv",header=TRUE,skip=1)[,c(1:3,seq(6,37,by=2))]
+
+income_marginal <- read.csv("./data/mitre/original/synthpop_data/ACS_13_5YR_B19001_with_ann.csv",header=TRUE,skip=1)[,c(1:3,seq(6,37,by=2))]
 income_marginal$BlockGroup <-  as.numeric(substr(income_marginal$Id2,6,12))
 income_marginal <- cbind(BlockGroup=income_marginal$BlockGroup,income_marginal[,4:19])
 income_marginal <- income_marginal %>% filter(BlockGroup != 9801001) # filter out blockgroup with 0 observations
