@@ -36,7 +36,7 @@ CL_PUMS$sqrtHINCP <- sqrt(CL_PUMS$HINCP)
 # impute using Bayesian linear regression; add the imputed values to data frame
 # be careful of memory constraints on number of draws (100 draws is 360Mb)
 
-nsamp = 3
+nsamp = 10
 mice.out <- mice(data=CL_PUMS %>% dplyr::select(sqrtHINCP,VALP,TAXP2), m = nsamp, method="norm")
 imputed_draws <- mice.out$imp$sqrtHINCP
 
@@ -45,6 +45,9 @@ for(i in 2:10){ #10 * nsamp total draws, this is done in a loop because doing it
   imputed_draws <- cbind(imputed_draws,mice.out$imp$sqrtHINCP)
 }
 imputed_draws[imputed_draws < 0] <- 0 # restrict household income to be positive
+
+
+
 
 # -----------------------------------------------------------------------
 # get the marginal distribution for income by block group; piecewise uniform with exponential tails
