@@ -2,7 +2,7 @@
 # jointData contains a sample of both x and y (like PUMS)
 # univariteData contains only x (like corelogic)
 # yMargin has a sketch of the density of y
-
+library(mice)
 nPop = 100000
 nJoint = 1000
 nUni = 200
@@ -32,6 +32,15 @@ miceData = rbind(jointData, cbind(y = NA, x = xData))
 
 nImpute = 1000
 
+imputeWithMICE = function(data, impCol, regressorCols, outName, imputations = 50){
+  
+  miceData = data[,c(impCol, regressorCols)]
+  
+  mice.out <- mice(data=miceData, m = imputations, method="norm")
+  return(as.matrix(mice.out$imp[[impCol]]))
+  
+}
+
 yImpute = imputeWithMICE(miceData, impCol = "y", regressorCols = "x", imputations = nImpute)
 
 # Now for each row we resample the columns, with probabilities proportional to the ones in the marginal distribution
@@ -54,6 +63,7 @@ seq = seq(0, 1, length = 1000)
 
 # True conditional distribution
 plot(seq, (1/jointData$x[row])*dbeta(seq/jointData$x[row], 2, 10), type = 'l', col = 'black')
+
 ## Make the marginal histogram
 nTestPoints = 10000
 bins = sample(1:length(yMargin), nTestPoints, rep = T, prob = yMargin)
