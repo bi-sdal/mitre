@@ -1,39 +1,71 @@
-n = 1000
-sigma2 = 5
-mu = rbeta(n, 2, 5) * 100
-hist(mu)
-x = rnorm(n, mu, sqrt(sigma2))
-nbreaks = 10
+# Three data elements:
+# jointData contains a sample of both x and y (like PUMS)
+# univariteData contains only x (like corelogic)
+# yMargin has a sketch of the density of y
 
-breaks = (0:nbreaks) * 100/nbreaks
+nPop = 100000
+nJoint = 1000
+nUni = 200
 
-margin = unname(table(cut(mu, breaks, include.lowest = TRUE)))
-probs = margin/sum(margin)
-probs
+# Create the population
 
-ntrial = 1000
-nmcmc = 20
+xPop = rgamma(nPop, 5, 5)
+yPop = xPop * rbeta(nUni, 2, 10)
+par(mfrow = c(2, 1))
+hist(xPop, prob = T)
+hist(yPop, prob = T)
+cor(xPop, yPop)
 
-mseNoResample = numeric(nmcmc)
-mseResample = numeric(nmcmc)
+# Sample the joint density. 
 
-# bootstrap sample the data nmcmc times
-bsMat = matrix(NA, n, nmcmc)
-resampleMat = matrix(NA, n, nmcmc)
-resampleVec = numeric(n)
-sigmaTrial = 8
+jointData = data.frame(y = yPop[1:nJoint], x = xPop[1:nJoint])
+xData = xPop[nJoint + (1:nUni)]
 
-for(i in 1:nmcmc) bsMat[,i] = rnorm(n, x, sigmaTrial)
+# Since we know y's distribution, we can find it's true margins and adjust the sampler towards those.
 
-for(j in 1:n){
-  #resampleMat[j,] = bsMat[j, sample(1:nmcmc, nmcmc, replace = TRUE, prob = probs[as.numeric(cut(bsMat[1,], breaks))])]
-  probsVector = probs[as.numeric(cut(bsMat[1,], breaks))]
-  probsVector = probsVector/sum(probsVector)
-  resampleVec[j] = sum(bsMat[j,] * probsVector)
+breakPoints = c(-Inf, seq(0, .5, length = 10), 1.75176)
+yMargin = diff(c(sapply(breakPoints, function(x) mean(yPop < x))))
+
+# Use MICE to impute x
+
+miceData = rbind(jointData, cbind(y = NA, x = xData))
+
+nImpute = 1000
+
+yImpute = imputeWithMICE(miceData, impCol = "y", regressorCols = "x", imputations = nImpute)
+
+# Now for each row we resample the columns, with probabilities proportional to the ones in the marginal distribution
+
+resampleRow = function(yImputeRow, breakPoints, margin){
+  
+  marginalDensityBins = as.numeric(cut(yImputeRow, breakPoints))
+  resampleProbs = margin[marginalDensityBins]
+  
+  return(sample(yImputeRow, length(yImputeRow), replace = TRUE, prob = resampleProbs))
 }
 
-mseNoResample = (rowMeans(bsMat) - mu)^2
-t.test((resampleVec - mu)^2, mseNoResample, paired = T)
-mean((resampleVec - mu)^2)
-mean(mseNoResample)
+yResample = t(apply(yImpute, 1, resampleRow, breakPoints, yMargin))
+
+
+# Look at the imputed density for a row for y, and the 'true' density of that row given x
+
+row = 3
+seq = seq(0, 1, length = 1000)
+
+# True conditional distribution
+plot(seq, (1/jointData$x[row])*dbeta(seq/jointData$x[row], 2, 10), type = 'l', col = 'black')
+## Make the marginal histogram
+nTestPoints = 10000
+bins = sample(1:length(yMargin), nTestPoints, rep = T, prob = yMargin)
+marSamp = sapply(bins, function(x) runif(1, breakPoints[x], breakPoints[x+1]))
+
+# Imputed conditional Distribution
+hist(yImpute[row,], prob = T, add = T, col = rgb(1,0,0,0.3))
+hist(yResample[row,], prob = T, add = T, col = rgb(0,0,1,0.3))
+hist(marSamp, prob = T, add = T, col = rgb(0,1,0,0.3))
+legend('topright', fill = c('black', 'red', 'blue', 'green'), legend = c("True", "Mice", "Resampled Mice", 'Marginal'), bty = 'n')
+
+
+
+
 
