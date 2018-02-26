@@ -13,7 +13,7 @@ CL_PUMS = read.csv("./data/mitre/working/cleanedExampleData/corelogicAndPUMS.csv
 
 # transform has to be a function name. Prob will remake this to the X1 X2 paradigm.
 
-imputed_draws = imputeWithMICE(CL_PUMS, "HINCP", c("VALP", "TAXP2"), transform = sqrt, outName = "sqrtHINCP", imputations = 1000)
+imputed_draws = imputeWithMICE(CL_PUMS, "HINCP", c("VALP", "TAXP2"), outName = "sqrtHINCP", imputations = 1000)
 
 ###
 ### END IMPUTATION STEP. NEXT FIND MARGINALS.
