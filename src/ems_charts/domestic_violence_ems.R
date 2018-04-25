@@ -5,7 +5,7 @@ ems_2013 <- list.files(path = '/home/sdal/projects/arl/arlington911/data/working
 
 tmp = fromJSON("./data/arlington911/data/working/ems/EMSCharts/2013/fieldDump2013.json")
 
-ems_txt <- lapply(X = ems_2013[1:100], FUN = function(x){paste(readLines(x), collapse = ' ')})
+ems_txt <- lapply(X = ems_2013[1:200], FUN = function(x){paste(readLines(x), collapse = ' ')})
 ems_txt_v <- unlist(ems_txt)
 
 # work with a subset for now
