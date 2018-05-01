@@ -5,6 +5,7 @@ library(geosphere)
 library(snowfall)
 library(microbenchmark)
 library(sf)
+
 # Compute distance matrix between police data and CL data. Returns the geodesic distance in kilometers
 policeToClDist = function(policeLonLat){
   

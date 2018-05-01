@@ -21,7 +21,7 @@ makeMarginalDensity = function(marginData, breaks, z = .1, type = "unifExp", exp
   
   ncols <- ncol(marginData)
   widths <- diff(breaks)
-  marginal_uniform_density <- (1-z/2)*income_marginal[,2:(ncols-1)]/rowSums(income_marginal[,2:ncols])
+  marginal_uniform_density <- (1-z/2)*marginData[,2:(ncols-1)]/rowSums(marginData[,2:ncols])
   mudSums = rowSums(marginal_uniform_density)
   marginal_uniform_density <- sweep(marginal_uniform_density, 2, z/2*widths/sum(widths), FUN = "+")
   marginal_uniform_density = sweep(marginal_uniform_density, 1, rowSums(marginal_uniform_density)/(mudSums), FUN = "/")
@@ -29,7 +29,7 @@ makeMarginalDensity = function(marginData, breaks, z = .1, type = "unifExp", exp
   
   marginal_uniform_density_mat <- as.data.frame((as.matrix(marginal_uniform_density) %*% diag(1/widths)))
   names(marginal_uniform_density_mat) <- names(marginal_uniform_density)
-  marginal_uniform_density_mat <- cbind(BlockGroup=income_marginal$BlockGroup,marginal_uniform_density_mat)
+  marginal_uniform_density_mat <- cbind(BlockGroup=marginData$BlockGroup,marginal_uniform_density_mat)
   
   # Get the proportion of data greater than the cutoff
   
@@ -38,7 +38,6 @@ makeMarginalDensity = function(marginData, breaks, z = .1, type = "unifExp", exp
   return(list(margin = marginal_uniform_density_mat, exponentialMargin = area_exp, expCutoff = expCutoff, expParm = expParm, breaks = breaks))
   
 }
-
 findMarginalDensity = function(marginData, income, blockgroup){
   
   # get the piecewise uniform density, area_exp corresponding to this blockgroup
@@ -60,7 +59,6 @@ findMarginalDensity = function(marginData, income, blockgroup){
   
   return(density_out)
 }
-
 imputeWithMICE = function(data, impCol, regressorCols, outName, imputations = 50){
   
   miceData = data[,c(impCol, regressorCols)]

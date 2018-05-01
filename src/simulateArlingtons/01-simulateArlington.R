@@ -7,13 +7,12 @@ source("./src/synthpop_code/generalizedSynthPop/synthpopFunctions.R")
 
 # Data elements. ACS_marginals is loaded in but doesn't seem to be used
 # CLdata is corelogic housing data
-
-income_marginal <- read.csv("./data/mitre/working/cleanedExampleData/income_marginal.csv")
-CL_PUMS = read.csv("./data/mitre/working/cleanedExampleData/corelogicAndPUMS.csv", stringsAsFactors = FALSE)
+marginalIncome = read.csv("./data/mitre/working/simulatedArlingtonData/marginalIncome.csv")
+clAtrackPums = read.csv("./data/mitre/working/cleanedExampleData/clAtrackPums.csv")
 
 # transform has to be a function name. Prob will remake this to the X1 X2 paradigm.
 
-imputed_draws = imputeWithMICE(CL_PUMS, "sqrtHINCP", c("VALP", "TAXP2"), outName = "sqrtHINCP", imputations = 100)
+imputed_draws = imputeWithMICE(clAtrackPums, "sqrtHINCP", c("VALP", "TAXP2"), outName = "sqrtHINCP", imputations = 100)
 
 ###
 ### END IMPUTATION STEP. NEXT FIND MARGINALS.
@@ -25,23 +24,22 @@ breaks <- c(-1,25000,50000,75000,100000,125000,150000,200000)
 expCutoff = 2e5
 
 # next, fit exponential tail for values > 200,000 using the MLE for an exponential distribution, 1/x-bar
-CL_PUMS %>% filter(source == "PUMS" & HINCP > expCutoff) %>% dplyr::select(HINCP) -> highInc
+clAtrackPums %>% filter(source == "PUMS" & HINCP > expCutoff) %>% dplyr::select(HINCP) -> highInc
 
 mle_lambda = 1/(mean(unlist(highInc) - expCutoff))
 
-marginDist = makeMarginalDensity(income_marginal, breaks = breaks, expParm = mle_lambda, expCutoff = expCutoff)
+marginDist = makeMarginalDensity(marginalIncome, breaks = breaks, expParm = mle_lambda, expCutoff = expCutoff)
 
 
 
 # -----------------------------------------------------------------------
 # draw imputed samples from the marginal distribution (independently for each household)
 # -----------------------------------------------------------------------
-
-bgs = filter(CL_PUMS, source == "CL")$BlockGroup
-
+# Number of MCMC samples
 ndraws <- 20
+bgs = filter(clAtrackPums, source != "PUMS")$BlockGroup
 
-imputed_income <- imputed_draws
+imputed_income <- imputed_draws^2
 marginal_samp_prob <- matrix(NA, nrow = nrow(imputed_draws), ncol = ncol(imputed_draws))
 
 for(i in 1:ncol(imputed_draws)){
@@ -55,6 +53,12 @@ income_draws <- matrix(NA,nrow=nrow(imputed_income),ncol=ndraws)
 for(i in 1:nrow(imputed_income)){
   income_draws[i,] <- sample(size=ndraws, x=imputed_income[i,], prob=marginal_samp_prob[i,], replace=TRUE)
 }
+
+colnames(income_draws) = paste0("incomeDraw", 1:ndraws)
+
+out = cbind(filter(clAtrackPums, source != "PUMS"), income_draws)
+
+fwrite(out[,-c(1, 8)], "./data/mitre/working/simulatedArlingtonData/simulatedArlingtonIncome.csv")
 
 # -----------------------------------------------------------------------
 # plot imputed joint income for a single draw by blockgroup (histogram) vs marginal distributions
