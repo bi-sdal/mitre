@@ -150,9 +150,10 @@ PUMS$source <- "PUMS"
 PUMS$BlockGroup <- NA
 PUMS$LATITUDE <- NA
 PUMS$LONGITUDE <- NA
-clAtrackPums <- rbind( CLdata %>% dplyr::select(HINCP,VALP=TOTAL.VALUE.CALCULATED,TAXP2=TAX.AMOUNT,BlockGroup,source, LATITUDE, LONGITUDE),
-                  rentalData %>% dplyr::select(HINCP,VALP=TOTAL.VALUE.CALCULATED,TAXP2=TAX.AMOUNT,BlockGroup,source, LATITUDE, LONGITUDE),
-                  PUMS %>% dplyr::select(HINCP,VALP,TAXP2,BlockGroup,source, LATITUDE, LONGITUDE) )
+PUMS$UNITS.NUMBER <- NA
+clAtrackPums <- rbind( CLdata %>% dplyr::select(HINCP,VALP=TOTAL.VALUE.CALCULATED,TAXP2=TAX.AMOUNT,BlockGroup,source, LATITUDE, LONGITUDE, UNITS.NUMBER),
+                  rentalData %>% dplyr::select(HINCP,VALP=TOTAL.VALUE.CALCULATED,TAXP2=TAX.AMOUNT,BlockGroup,source, LATITUDE, LONGITUDE, UNITS.NUMBER),
+                  PUMS %>% dplyr::select(HINCP,VALP,TAXP2,BlockGroup,source, LATITUDE, LONGITUDE, UNITS.NUMBER) )
 # transform income to satisfy linear regression assumptions
 clAtrackPums$sqrtHINCP <- sqrt(clAtrackPums$HINCP)
 

@@ -10,9 +10,14 @@ source("./src/synthpop_code/generalizedSynthPop/synthpopFunctions.R")
 marginalIncome = read.csv("./data/mitre/working/simulatedArlingtonData/marginalIncome.csv")
 clAtrackPums = read.csv("./data/mitre/working/cleanedExampleData/clAtrackPums.csv")
 
-# transform has to be a function name. Prob will remake this to the X1 X2 paradigm.
+# Do imputation
+# Since we're using residencies with multiple units, we must divide the relevant values by the number of units
+clAtrackPums$HINCP[!is.na(clAtrackPums$UNITS.NUMBER)] = clAtrackPums$HINCP[!is.na(clAtrackPums$UNITS.NUMBER)]/clAtrackPums$UNITS.NUMBER[!is.na(clAtrackPums$UNITS.NUMBER)]
+clAtrackPums$VALP[!is.na(clAtrackPums$UNITS.NUMBER)] = clAtrackPums$VALP[!is.na(clAtrackPums$UNITS.NUMBER)]/clAtrackPums$UNITS.NUMBER[!is.na(clAtrackPums$UNITS.NUMBER)]
+clAtrackPums$TAXP2[!is.na(clAtrackPums$UNITS.NUMBER)] = clAtrackPums$TAXP2[!is.na(clAtrackPums$UNITS.NUMBER)]/clAtrackPums$UNITS.NUMBER[!is.na(clAtrackPums$UNITS.NUMBER)]
+clAtrackPums$sqrtHINCP = sqrt(clAtrackPums$HINCP)
 
-imputed_draws = imputeWithMICE(clAtrackPums, "sqrtHINCP", c("VALP", "TAXP2"), outName = "sqrtHINCP", imputations = 100)
+imputed_draws = imputeWithMICE(clAtrackPums, "sqrtHINCP", c("VALP", "TAXP2"), outName = "sqrtHINCP", imputations = 1000)
 
 ###
 ### END IMPUTATION STEP. NEXT FIND MARGINALS.
@@ -30,35 +35,40 @@ mle_lambda = 1/(mean(unlist(highInc) - expCutoff))
 
 marginDist = makeMarginalDensity(marginalIncome, breaks = breaks, expParm = mle_lambda, expCutoff = expCutoff)
 
+### If a transformed variable is imputed, make sure to do the INVERSE TRANSFORMATION before passing it to the resampler
 
+imputations = imputed_draws^2
+nDraws = 100
+blockGroups = filter(clAtrackPums, source != "PUMS")$BlockGroup
 
-# -----------------------------------------------------------------------
-# draw imputed samples from the marginal distribution (independently for each household)
-# -----------------------------------------------------------------------
-# Number of MCMC samples
-ndraws <- 20
-bgs = filter(clAtrackPums, source != "PUMS")$BlockGroup
-
-imputed_income <- imputed_draws^2
-marginal_samp_prob <- matrix(NA, nrow = nrow(imputed_draws), ncol = ncol(imputed_draws))
-
-for(i in 1:ncol(imputed_draws)){
+resampleImputedDraws = function(imputations, nDraws = 20, blockGroups, marginDist){
   
-  marginal_samp_prob[,i] = findMarginalDensity(marginDist, income = imputed_income[,i], blockgroup = bgs) # likelihoods
-  if(i%%100==0) print(i)
+  marginal_samp_prob <- matrix(NA, nrow = nrow(imputations), ncol = ncol(imputations))
   
+  for(i in 1:ncol(imputations)){
+    
+    marginal_samp_prob[,i] = findMarginalDensity(marginDist, income = imputations[,i], blockgroup = blockGroups) # likelihoods
+    if(i%%100==0) print(i)
+    
+  }
+  
+  income_draws <- matrix(NA,nrow=nrow(imputations),ncol=nDraws)
+  
+  for(i in 1:nrow(imputations)){
+    income_draws[i,] <- sample(size=nDraws, x=imputations[i,], prob=marginal_samp_prob[i,], replace=TRUE)
+  }
+  
+  colnames(income_draws) = paste0("incomeDraw", 1:nDraws)
+  return(income_draws)
 }
 
-income_draws <- matrix(NA,nrow=nrow(imputed_income),ncol=ndraws)
-for(i in 1:nrow(imputed_income)){
-  income_draws[i,] <- sample(size=ndraws, x=imputed_income[i,], prob=marginal_samp_prob[i,], replace=TRUE)
-}
+incomeDraws = resampleImputedDraws(imputations, nDraws = nDraws, blockGroups = blockGroups, marginDist = marginDist)
 
-colnames(income_draws) = paste0("incomeDraw", 1:ndraws)
 
-out = cbind(filter(clAtrackPums, source != "PUMS"), income_draws)
+out = cbind(filter(clAtrackPums, source != "PUMS"), incomeDraws)
 
-fwrite(out[,-c(1, 8)], "./data/mitre/working/simulatedArlingtonData/simulatedArlingtonIncome.csv")
+
+fwrite(out[,-c(1, 9)], "./data/mitre/working/simulatedArlingtonData/simulatedArlingtonIncome.csv")
 
 # -----------------------------------------------------------------------
 # plot imputed joint income for a single draw by blockgroup (histogram) vs marginal distributions

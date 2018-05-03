@@ -59,6 +59,7 @@ findMarginalDensity = function(marginData, income, blockgroup){
   
   return(density_out)
 }
+
 imputeWithMICE = function(data, impCol, regressorCols, outName, imputations = 50){
   
   miceData = data[,c(impCol, regressorCols)]
