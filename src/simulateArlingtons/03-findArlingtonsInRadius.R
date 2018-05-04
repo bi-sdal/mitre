@@ -3,6 +3,7 @@ library(mice)
 library(data.table)
 library(readr)
 library(sf)
+require(ggplot2)
 source("./src/simulateArlingtons/00-simulateArlFunctions.R")
 
 getHomesInRadius = function(callNumber, policeData, resData, connection, radius = .2){
@@ -36,8 +37,8 @@ conDist = sdalr::con_db("mitre")
 closestAddress = t(sapply(callNos, function(x){
   distMatRow = match(x, policeData$Call_No)
   dists = DBI::dbGetQuery(conDist, sprintf("SELECT * FROM police_distances_long WHERE police = '%s';", distMatRow))$distance
-  out = c(which.min(dists), min(dists))
-  names(out) = c("closestHouse", "DistKm")
+  out = c(x, which.min(dists), min(dists))
+  names(out) = c("Call_No", "closestHouse", "DistKm")
   return(out)
 }))
 closestAddress = data.table(closestAddress)
@@ -47,6 +48,13 @@ houseIndex = data.table(closestHouse = 1:44642)
 eventsAtAddress = merge(houseIndex, y = closestAddress[,.N, by = closestHouse], all = TRUE)
 eventsAtAddress$N[is.na(eventsAtAddress$N)] = 0
 incomeSims = cbind(incomeSims, eventsAtAddress = eventsAtAddress$N)
+
+#
+# WRITE TO FILE SO DAVE CAN PLOT
+#
+
+fwrite(incomeSims, "./data/mitre/working/simulatedArlingtonData/arlSimWithCaseCounts.csv")
+fwrite(closestAddress, "./data/mitre/working/simulatedArlingtonData/closestHouseToCall.csv")
 
 plot(incomeSims$UNITS.NUMBER[incomeSims$eventsAtAddress > 0], incomeSims$eventsAtAddress[incomeSims$eventsAtAddress > 0], xlab = "Units Number", ylab = "Number of Events")
 
@@ -62,6 +70,7 @@ arlBlockGroups <- sf::st_read_db(conGeo, c("geospatial$census_cb", "cb_2016_51_b
 arlBlockGroups <- arlBlockGroups[arlBlockGroups$COUNTYFP=="013",]
 # add in the police call locations
 
+ggplot(arlBlockGroups) + geom_sf()
 
 radius = 1
 homesInRadius = getHomesInRadius(callNumber, policeData, incomeSims, conDist, radius)
