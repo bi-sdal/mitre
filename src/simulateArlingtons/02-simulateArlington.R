@@ -3,7 +3,7 @@
 library(dplyr)
 library(mice)
 library(data.table)
-source("./src/synthpop_code/generalizedSynthPop/synthpopFunctions.R")
+source("./src/simulateArlingtons/00-simulateArlFunctions.R")
 
 # Data elements. ACS_marginals is loaded in but doesn't seem to be used
 # CLdata is corelogic housing data
