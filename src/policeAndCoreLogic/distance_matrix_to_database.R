@@ -11,3 +11,7 @@ setnames(dt_long, 'V1', 'police')
 con <- sdalr::con_db('mitre')
 DBI::dbWriteTable(conn = con, name = 'police_distances_long', value = dt_long,
                   row.names = FALSE, overwrite = TRUE)
+
+# make data science go vroom vroom
+DBI::dbSendQuery(con, 'CREATE INDEX police ON police_distances_long (police);')
+DBI::dbSendQuery(con, 'CREATE INDEX police_house ON police_distances_long (police, house);')
