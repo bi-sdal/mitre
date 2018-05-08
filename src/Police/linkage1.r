@@ -2,6 +2,7 @@ library(dplyr)
 library(data.table)
 library(sf)
 require(ggplot2)
+library(geosphere)
 
 # Load data
 #Police data
@@ -28,13 +29,15 @@ policeData %>% group_by(LONGITUDE,LATITUDE,Location) %>%
 PDF=FALSE
 if(PDF) pdf('distv1.pdf',width=4,height=4)
 par(mfrow=c(1,1),oma=c(0,0,0,0),mar=c(0,0,0,0))
-plot(simA1$LONGITUDE,simA1$LATITUDE,pch='.',cex=.7,col='grey80')
-points(simA1$LONGITUDE,simA1$LATITUDE,pch='.',cex=.7,col='grey80')
-points(cfsDOME2013$lng,cfsDOME2013$lat,pch=19,cex=.4,col='black')
-matlines(ym,xm,col='red')
+plot(incomeSims$LONGITUDE,incomeSims$LATITUDE,pch='.',cex=.7,col='grey80')
+points(incomeSims$LONGITUDE,incomeSims$LATITUDE,pch='.',cex=.7,col='grey80')
+points(policeData$LONGITUDE,policeData$LATITUDE,pch=19,cex=.4,col='black')
+# lost this object showing distances from a police call location to a collection
+# of 100 housing unit locations
+#matlines(ym,xm,col='red')
 if(PDF) dev.off()
 
-# show the locations of housing units 
+# show the locations of housing units and the police calls
 if(PDF) pdf('linkv2.pdf',width=4,height=4)
 par(mfrow=c(1,1),oma=c(0,0,0,0),mar=c(0,0,0,0))
 plot(incomeSims$LONGITUDE,incomeSims$LATITUDE,type='n')
@@ -85,8 +88,18 @@ if(PDF) dev.off()
 # plot the housing units and cases
 if(PDF) pdf('localRegions.pdf',width=4,height=4)
 par(mfrow=c(1,1),oma=c(0,0,0,0),mar=c(0,0,0,0))
-plot(simA1$LONGITUDE,simA1$LATITUDE,pch='.',col='grey')
-points(cfsDOME2013$lng,cfsDOME2013$lat,pch=16,cex=.5,col='black')
+plot(incomeSims$LONGITUDE,incomeSims$LATITUDE,pch='.',col='grey')
+points(policeData$LONGITUDE,policeData$LATITUDE,pch=16,cex=.5,col='black')
+
+### This commeted line below is where I select the 5 points at which the 
+### logistic regressions are carried out.  This object was lost when we fixed
+### the GIT issues, so here's a close, but not exactly the same collection of points:
+# > localPoints
+# $x
+# [1] -77.11756 -77.10582 -77.08804 -77.13629 -77.09344
+# 
+# $y
+# [1] 38.85495 38.87445 38.85029 38.89190 38.83807
 #localPoints <- locator(5)
 # now find all units that are within 500m to each point
 isNear <- function(lon0,lat0,LAT=incomeSims$LATITUDE,LON=incomeSims$LONGITUDE,dist=500){
@@ -96,11 +109,13 @@ isNear <- function(lon0,lat0,LAT=incomeSims$LATITUDE,LON=incomeSims$LONGITUDE,di
   return(dvals <= dist)
 }
 # call isNear to get a vector of T/F indicators of nearness
-okmat <- cbind(isNear(localPoints$x[1],localPoints$y[1],dist=1000),
-               isNear(localPoints$x[2],localPoints$y[2],dist=1000),
-               isNear(localPoints$x[3],localPoints$y[3],dist=1000),
-               isNear(localPoints$x[4],localPoints$y[4],dist=1000),
-               isNear(localPoints$x[5],localPoints$y[5],dist=1000))
+ # radius about points in meters
+dradius = 1000
+okmat <- cbind(isNear(localPoints$x[1],localPoints$y[1],dist=dradius),
+               isNear(localPoints$x[2],localPoints$y[2],dist=dradius),
+               isNear(localPoints$x[3],localPoints$y[3],dist=dradius),
+               isNear(localPoints$x[4],localPoints$y[4],dist=dradius),
+               isNear(localPoints$x[5],localPoints$y[5],dist=dradius))
 for(k in 1:5) points(incomeSims$LONGITUDE[okmat[,k]],incomeSims$LATITUDE[okmat[,k]],pch='.',col=k+1)
 text(localPoints,labels=as.character(1:5),col='yellow')
 if(PDF) dev.off()
@@ -110,18 +125,19 @@ ihu <- as.numeric(names(tabEvent))
 ylink <- rep(0,nrow(incomeSims))
 ylink[ihu] <- tabEvent
 
- # rate by region
-for(k in 1:5){
-  print(sum(yevent[okmat[,k]])/sum(incomeSims$UNITS.NUMBER[okmat[,k]]))
-}
-# rates by region 0.001046645 0.000293443 0.01084636 0.01544944 0.002644714
-
  # show a first plot of income by ylink
 par(mfrow=c(1,1),oma=c(0,0,0,0),mar=c(4,4,1,1))
 plot(sqrt(incomeSims$incomeDraw1),jitter(ylink),pch='.')
 plot(ksmooth(incomeSims$incomeDraw1,ylink))
 plot(ylink,incomeSims$eventsAtAddress)
 yevent <- ifelse(ylink <= incomeSims$UNITS.NUMBER,ylink,incomeSims$UNITS.NUMBER)
+
+# rate by region
+for(k in 1:5){
+  print(sum(yevent[okmat[,k]])/sum(incomeSims$UNITS.NUMBER[okmat[,k]]))
+}
+# rates by region 0.001046645 0.000293443 0.01084636 0.01544944 0.002644714
+
 
  # fit a logistic regression
 plotLR <- function(isubset,kreal,PLOT=TRUE){
