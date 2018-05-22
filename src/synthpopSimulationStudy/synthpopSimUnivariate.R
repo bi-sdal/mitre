@@ -10,7 +10,7 @@ nUni = 200
 # Create the population
 
 xPop = rgamma(nPop, 5, 5)
-yPop = xPop * rbeta(nUni, 2, 10)
+yPop = xPop * rbeta(nPop, 2, 10)
 par(mfrow = c(2, 1))
 hist(xPop, prob = T)
 hist(yPop, prob = T)

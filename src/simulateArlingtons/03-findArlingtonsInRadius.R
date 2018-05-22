@@ -70,7 +70,7 @@ arlBlockGroups <- sf::st_read_db(conGeo, c("geospatial$census_cb", "cb_2016_51_b
 arlBlockGroups <- arlBlockGroups[arlBlockGroups$COUNTYFP=="013",]
 # add in the police call locations
 
-ggplot(arlBlockGroups) + geom_sf()
+ggplot(arlBlockGroups) + geom_sf(aes(geometry = wkb_geometry, fill = ALAND))
 
 radius = 1
 homesInRadius = getHomesInRadius(callNumber, policeData, incomeSims, conDist, radius)
