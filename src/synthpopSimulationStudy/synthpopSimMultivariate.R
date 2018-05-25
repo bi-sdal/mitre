@@ -44,9 +44,10 @@ yImpute = imputeWithMICE(miceData, impCol = colnames(yPop), regressorCols = "x",
 # In the multivariate case, the same column from each list element is sampeled on a row by row basis.
 # The probability of a column is proportional to the product of the marginals for each column
 
+
 # Look at the imputed density for a row for y, and the 'true' density of that row given x
 
-row = 100
+row = 1
 yResample = indepJointDensityResample(row, yImpute, resampler)
 
 # True conditional distribution

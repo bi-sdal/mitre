@@ -27,6 +27,7 @@ xData = xPop[nJoint + (1:nUni)]
 
 miceData = rbind(jointData, cbind(y = NA, x = xData))
 
+
 nImpute = 1000
 yImpute = imputeWithMICE(miceData, impCol = "y", regressorCols = "x", imputations = nImpute, method = 'norm')
 

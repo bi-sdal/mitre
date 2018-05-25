@@ -28,12 +28,13 @@ autoBreaksAndMargins = function(yData, breakPoints, expParm){
   return(out)
 }
 
-imputeWithMICE = function(data, impCol, regressorCols, outName, imputations = 50, ...){
+imputeWithMICE = function(data, impCol, regressorCols, imputations = 50, ...){
   
   miceData = data[,c(impCol, regressorCols)]
   
   mice.out <- mice(data=miceData, m = imputations, ...)
-  return(as.matrix(mice.out$imp[impCol]))
+  if(length(impCol) == 1) return(as.matrix(mice.out$imp[[impCol]]))
+  if(length(impCol) > 1) return(as.matrix(mice.out$imp[impCol]))
   
 }
 
