@@ -31,7 +31,7 @@ xData = xPop[nJoint + (1:nPoint)]
 miceData = rbind(jointData, cbind(y1 = NA, y2 = NA, x = xData))
 
 # Since we know y's distribution, we can find it's true margins and adjust the sampler towards those.
-# Drump up some cut points. This is arbitrary
+# Drum up some cut points. This is arbitrary.
 
 resampler = lapply(1:nFeatures, function(x) autoBreaksAndMargins(yPop[,x]))
 
@@ -47,7 +47,7 @@ yImpute = imputeWithMICE(miceData, impCol = colnames(yPop), regressorCols = "x",
 
 # Look at the imputed density for a row for y, and the 'true' density of that row given x
 
-row = 1
+row = 20
 yResample = indepJointDensityResample(row, yImpute, resampler)
 
 # True conditional distribution
@@ -59,8 +59,3 @@ hist(yPop[,margin], prob = T, col = rgb(0,0,0,.1))
 hist(unlist(yImpute[[margin]][row,]), prob = T, add = T, col = rgb(1,0,0,0.3))
 hist(yResample[margin,], prob = T, add = T, col = rgb(0,0,1,0.3))
 legend('topright', fill = c('black', 'red', 'blue'), legend = c("True", "Mice", "Resampled Mice"), bty = 'n')
-# Imputed conditional Distribution
-
-median(yPop[,margin])
-median(unlist(yImpute[[margin]][row,]))
-median(yResample[margin,])

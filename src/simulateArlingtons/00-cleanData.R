@@ -25,8 +25,12 @@ marginalIncome = data.table(BlockGroup = marginalIncome$Id2,
 # read in CoreLogic data for Arlington; subset by single family and by variables of interest
 # including home value (TOTAL.VALUE.CALCULATED), taxes paid (TAX.AMOUNT)
 
-CLdata = fread("./data/mitre/original/synthpop_data/Arlington_CL_2013_Data.csv")[!is.na(TOTAL.VALUE.CALCULATED) & !is.na(TAX.AMOUNT) & !is.na(BlockGroup_rec),
-                                                                                 .(BlockGroup=BlockGroup_rec,TOTAL.VALUE.CALCULATED,TAX.AMOUNT,LATITUDE,LONGITUDE, UNITS.NUMBER, PropertyType)]
+CLdata = fread("./data/mitre/original/synthpop_data/Arlington_CL_2013_Data.csv")
+
+CLdata = Cldata[!is.na(TOTAL.VALUE.CALCULATED) & !is.na(TAX.AMOUNT) & !is.na(BlockGroup_rec),
+                .(BlockGroup=BlockGroup_rec,TOTAL.VALUE.CALCULATED,TAX.AMOUNT,LATITUDE,LONGITUDE, UNITS.NUMBER, PropertyType)]
+
+
 # Set all missing unit numbers to 1 except for multifamily households
 CLdata$UNITS.NUMBER[CLdata$PropertyType != "Multifamily" & is.na(CLdata$UNITS.NUMBER)] = 1
 CLdata = na.omit(unique(CLdata[,.(BlockGroup,TOTAL.VALUE.CALCULATED,TAX.AMOUNT,LATITUDE,LONGITUDE, UNITS.NUMBER)]))

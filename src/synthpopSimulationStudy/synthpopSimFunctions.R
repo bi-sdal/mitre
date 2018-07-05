@@ -4,7 +4,7 @@ autoBreaksAndMargins = function(yData, breakPoints, expParm){
   if(missing(breakPoints)) breakPoints = c(0, quantile(yData, seq(0.1, .9, length = 9)))
   widths = diff(breakPoints)
   
-  # Computes the proportion of data in each bin (non-trivial for user supplied points) and divides by the width to get the density value
+  # Computes the proportion of data in each bin and divides by the width to get the density value
   binProps = table(findInterval(yData, breakPoints))/length(yData)
   tailDensity = binProps[length(binProps)]
   marginDensity = binProps[-length(binProps)]/widths
@@ -28,6 +28,49 @@ autoBreaksAndMargins = function(yData, breakPoints, expParm){
   return(out)
 }
 
+# densityType is one of exponential, geometric
+resamplerCtor = function(marginalTable, breakPoints, densityType, parms){
+  widths = diff(breakPoints)
+  marginalTable = unlist(marginalTable)
+  
+  binProps = marginalTable/sum(marginalTable)
+  tailDensity = binProps[length(binProps)]
+  marginDensity = binProps[-length(binProps)]/widths
+  
+  densityValue = switch(densityType,
+                        exponential = function(y){
+                          if(y < 0) return(0)
+                          bin = findInterval(y, breakPoints)
+                          if(bin == length(binProps)) {
+                            return(tailDensity * parms[1] * exp(-parms[1] * (y - max(breakPoints))))
+                          }else{
+                            return(marginDensity[bin])
+                          }
+                        },
+                        geometric = function(y){
+                          if(y < 0) return(0)
+                          bin = findInterval(y, breakPoints)
+                          if(bin == length(binProps)) {
+                            return(
+                              tailDensity * parms[1] * (1 - parms[1])^(y - max(breakPoints) )
+                                   )
+                          }else{
+                            return(marginDensity[bin])
+                          }
+                        }
+  )
+  
+  out = list(breakPoints = breakPoints, densityValue = densityValue, parameters = parms)
+}
+
+
+
+
+
+
+
+
+
 imputeWithMICE = function(data, impCol, regressorCols, imputations = 50, ...){
   
   miceData = data[,c(impCol, regressorCols)]
@@ -44,7 +87,7 @@ resampleRow = function(yImputeRow, resampler){
   return(sample(yImputeRow, length(yImputeRow), replace = TRUE, prob = resampleProbs))
 }
 
-indepJointDensityResample = function(resampleRow, imputedData, resampler){
+indepJointDensityResample = function(resampleRow, imputedData, resampler, nDraws = 1000){
   
   imputations = do.call(rbind, lapply(imputedData, function(x) x[resampleRow,]))
   
@@ -55,9 +98,9 @@ indepJointDensityResample = function(resampleRow, imputedData, resampler){
   probs = apply(probs, 1, prod)
   probs = probs/sum(probs)
   
-  resampledDraws = imputations[,sample(1:ncol(imputations), ncol(imputations), T, probs)]
-  return(as.matrix(resampledDraws))
+  resampledDraws = imputations[,sample(1:ncol(imputations), nDraws, T, probs)]
+  names(resampledDraws) = NULL
+  out = list(resampledDraws[1,], resampledDraws[2,])
+  names(out) = rownames(imputedData)
+  return(out)
 }
-
-
-
