@@ -131,9 +131,10 @@ resampleRow = function(yImputeRow, resampler){
   return(sample(yImputeRow, length(yImputeRow), replace = TRUE, prob = resampleProbs))
 }
 
-indepJointDensityResample = function(resampleRow, imputedData, resampler){
+indepJointDensityResample = function(resampleRow, imputedData, resampler, nDraws){
   
   imputations = do.call(rbind, lapply(imputedData, function(x) x[resampleRow,]))
+  nFeatures = length(imputedData)
   
   probs = sapply(1:nFeatures, function(x) {
     unname(sapply(imputations[x,], resampler[[x]]$densityValue))
@@ -142,7 +143,41 @@ indepJointDensityResample = function(resampleRow, imputedData, resampler){
   probs = apply(probs, 1, prod)
   probs = probs/sum(probs)
   
-  resampledDraws = imputations[,sample(1:ncol(imputations), ncol(imputations), T, probs)]
+  resampledDraws = imputations[,sample(1:ncol(imputations), nDraws, T, probs)]
   return(as.matrix(resampledDraws))
+}
+
+resamplerCtor = function(marginalTable, breakPoints, densityType, parms){
+  widths = diff(breakPoints)
+  marginalTable = unlist(marginalTable)
+  
+  binProps = marginalTable/sum(marginalTable)
+  tailDensity = binProps[length(binProps)]
+  marginDensity = binProps[-length(binProps)]/widths
+  
+  densityValue = switch(densityType,
+                        exponential = function(y){
+                          if(y < 0) return(0)
+                          bin = findInterval(y, breakPoints)
+                          if(bin == length(binProps)) {
+                            return(tailDensity * parms[1] * exp(-parms[1] * (y - max(breakPoints))))
+                          }else{
+                            return(marginDensity[bin])
+                          }
+                        },
+                        geometric = function(y){
+                          if(y < 0) return(0)
+                          bin = findInterval(y, breakPoints)
+                          if(bin == length(binProps)) {
+                            return(
+                              tailDensity * parms[1] * (1 - parms[1])^(y - max(breakPoints) )
+                            )
+                          }else{
+                            return(marginDensity[bin])
+                          }
+                        }
+  )
+  
+  out = list(breakPoints = breakPoints, densityValue = densityValue, parameters = parms)
 }
 

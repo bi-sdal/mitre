@@ -172,6 +172,7 @@ clAtrackPums = rbind(CLdata, rentalData, PUMS, fill = TRUE)
 
 # transform income to satisfy linear regression assumptions
 clAtrackPums[,sqrtHINCP := sqrt(HINCP)]
+clAtrackPums$houseID = 1:nrow(clAtrackPums)
 
 #
 # Write the final cleaned data
