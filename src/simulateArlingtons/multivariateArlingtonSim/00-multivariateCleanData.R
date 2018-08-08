@@ -7,7 +7,9 @@ library(stringr)
 ## Cleaning and preparation for the ACS marginal tables
 
 marginalIncome = fread("./data/mitre/original/marginData/arlMarginalIncomeBG.csv", skip = 1)[,c(2,seq(6,37,by=2))]
+marginalRoomCount = fread("./data/mitre/original/marginData/ACS_NO_ROOMS.csv")
 marginalIncome$Id2 = as.numeric(substr(marginalIncome$Id2,6,12))
+marginalRoomCount$Id2 = as.numeric(substr(marginalRoomCount$Id2,6,12))
 # Group by 25k
 marginalIncome = data.table(BlockGroup = marginalIncome$Id2,
                             '0to25' = rowSums(marginalIncome[,2:5]), 
@@ -18,6 +20,18 @@ marginalIncome = data.table(BlockGroup = marginalIncome$Id2,
                             '125to150' = rowSums(marginalIncome[,15]),
                             '150to200' = rowSums(marginalIncome[,16]),
                             '200plus' = rowSums(marginalIncome[,17]))
+marginalRoomCount = marginalRoomCount[,.(BlockGroup = marginalRoomCount$Id2,
+                                         oneRoom = `Estimate; Total: - 1 room`,
+                                         twoRooms = `Estimate; Total: - 2 rooms`,
+                                         threeRooms = `Estimate; Total: - 3 rooms`,
+                                         fourRooms = `Estimate; Total: - 4 rooms`,
+                                         fiveRooms = `Estimate; Total: - 5 rooms`,
+                                         sixRooms = `Estimate; Total: - 6 rooms`,
+                                         sevenRooms = `Estimate; Total: - 7 rooms`,
+                                         eightRooms = `Estimate; Total: - 8 rooms`,
+                                         ninePlusRooms = `Estimate; Total: - 9 or more rooms`)]
+
+
 
 
 # Cleaning for Corelogic, ATRACK and the PUMS data
@@ -27,24 +41,29 @@ marginalIncome = data.table(BlockGroup = marginalIncome$Id2,
 
 CLdata = fread("./data/mitre/original/synthpop_data/Arlington_CL_2013_Data.csv")
 
-CLdata = Cldata[!is.na(TOTAL.VALUE.CALCULATED) & !is.na(TAX.AMOUNT) & !is.na(BlockGroup_rec),
-                .(BlockGroup=BlockGroup_rec,TOTAL.VALUE.CALCULATED,TAX.AMOUNT,LATITUDE,LONGITUDE, UNITS.NUMBER, PropertyType)]
-
+CLdata = CLdata[!is.na(TOTAL.VALUE.CALCULATED) & !is.na(TAX.AMOUNT) & !is.na(BlockGroup_rec),
+                .(BlockGroup=BlockGroup_rec, TOTAL.VALUE.CALCULATED,  TAX.AMOUNT, LATITUDE, LONGITUDE, UNITS.NUMBER, PropertyType)]
 
 # Set all missing unit numbers to 1 except for multifamily households
 CLdata$UNITS.NUMBER[CLdata$PropertyType != "Multifamily" & is.na(CLdata$UNITS.NUMBER)] = 1
-CLdata = na.omit(unique(CLdata[,.(BlockGroup,TOTAL.VALUE.CALCULATED,TAX.AMOUNT,LATITUDE,LONGITUDE, UNITS.NUMBER)]))
+CLdata = na.omit(unique(CLdata[,PropertyType := NULL]))
 setkey(CLdata, BlockGroup)
 
 # Read in ATRACK
 
-rentalData = fread("./data/mitre/working/PoliceData/CoreLogic_ATRACK_joined.csv")[,.(BlockGroup=BlockGroup_rec,TOTAL.VALUE.CALCULATED,TAX.AMOUNT,LATITUDE,LONGITUDE, UNITS.NUMBER = units)]
+rentalData = fread("./data/mitre/working/PoliceData/CoreLogic_ATRACK_joined.csv")
+rentalData = rentalData[,.(BlockGroup=BlockGroup_rec, TOTAL.VALUE.CALCULATED,  TAX.AMOUNT, LATITUDE, LONGITUDE, UNITS.NUMBER = units)]
+
+
 rentalData = na.omit(unique(rentalData))
 setkey(rentalData, BlockGroup)
-# Read in PUMS
 
-PUMS = fread("./data/mitre/original/synthpop_data/ss14hva.csv")[PUMA10 %in% c(1301, 1302) & VALP < 1500000 & HINCP >= 0, 
-                                                                .(PUMA10,HINCP,VALP,TAXP)]
+#
+# Read in PUMS
+#
+
+PUMS = fread("./data/mitre/original/synthpop_data/ss14hva.csv")
+PUMS = PUMS[PUMA10 %in% c(1301, 1302) & VALP < 1500000 & HINCP >= 0, .(PUMA10, HINCP, VALP, TAXP, RMSP)]
 
 # ------------------------------------------------------------------------------------------------
 # TAXP is binned. To use it as a predictor in our model we convert it into $$ by taking the center value of each bin.
@@ -141,32 +160,27 @@ rentalData$TOTAL.VALUE.CALCULATED[rentalData$TOTAL.VALUE.CALCULATED > max(PUMS$V
 rentalData$TAX.AMOUNT[rentalData$TAX.AMOUNT > max(PUMS$TAXP2)] <- max(PUMS$TAXP2)
 
 
-# -----------------------------------------------------------------------
-# generate 1000 (nsamp) conditional samples with mice
-# -----------------------------------------------------------------------
-
 # create combined data frame
 CLdata$source <- "CL"
-CLdata$HINCP <- NA
-rentalData$source <- "AT"
-rentalData$HINCP <- NA
 PUMS$source <- "PUMS"
-PUMS$BlockGroup <- NA
-PUMS$LATITUDE <- NA
-PUMS$LONGITUDE <- NA
-PUMS$UNITS.NUMBER <- NA
-clAtrackPums <- rbind( CLdata %>% dplyr::select(HINCP,VALP=TOTAL.VALUE.CALCULATED,TAXP2=TAX.AMOUNT,BlockGroup,source, LATITUDE, LONGITUDE, UNITS.NUMBER),
-                  rentalData %>% dplyr::select(HINCP,VALP=TOTAL.VALUE.CALCULATED,TAXP2=TAX.AMOUNT,BlockGroup,source, LATITUDE, LONGITUDE, UNITS.NUMBER),
-                  PUMS %>% dplyr::select(HINCP,VALP,TAXP2,BlockGroup,source, LATITUDE, LONGITUDE, UNITS.NUMBER) )
+rentalData$source <- "AT"
+
+
+setnames(CLdata, c('TOTAL.VALUE.CALCULATED', 'TAX.AMOUNT'), c('VALP', 'TAXP2'))
+
+clAtrackPums = rbind(CLdata, rentalData, PUMS, fill = TRUE)
+
 # transform income to satisfy linear regression assumptions
-clAtrackPums$sqrtHINCP <- sqrt(clAtrackPums$HINCP)
+clAtrackPums[,sqrtHINCP := sqrt(HINCP)]
+clAtrackPums$houseID = 1:nrow(clAtrackPums)
 
 #
 # Write the final cleaned data
 #
 
+fwrite(marginalRoomCount, "./data/mitre/working/simulatedArlingtonData/marginalRooms.csv", row.names  = F)
 fwrite(marginalIncome, "./data/mitre/working/simulatedArlingtonData/marginalIncome.csv", row.names  = F)
-fwrite(clAtrackPums, "./data/mitre/working/cleanedExampleData/clAtrackPums.csv", row.names  = F)
+fwrite(clAtrackPums, "./data/mitre/working/cleanedExampleData/clAtrackPumsMultivariate.csv", row.names  = F)
 
 
 

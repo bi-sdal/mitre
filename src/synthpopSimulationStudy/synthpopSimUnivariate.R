@@ -28,7 +28,7 @@ xData = xPop[nJoint + (1:nUni)]
 miceData = rbind(jointData, cbind(y = NA, x = xData))
 
 
-nImpute = 1000
+nImpute = 5000
 yImpute = imputeWithMICE(miceData, impCol = "y", regressorCols = "x", imputations = nImpute, method = 'norm')
 
 # Now for each row we resample the columns, with probabilities proportional to the ones in the marginal distribution
@@ -38,18 +38,19 @@ yResample = t(apply(yImpute, 1, resampleRow, resampler))
 
 # Look at the imputed density for a row for y, and the 'true' density of that row given x
 
-row = 2
+row = 13
 seq = seq(0, 1, length = 1000)
 par(mfrow = c(1, 1))
 # True conditional distribution
 plot(seq, (1/jointData$x[row])*dbeta(seq/jointData$x[row], 2, 10), type = 'l', col = 'black')
 
 # Imputed conditional Distribution
+hist(yPop, prob = T, add = T, col = rgb(0,0,0,0.1))
 hist(yImpute[row,], prob = T, add = T, col = rgb(1,0,0,0.1))
 hist(yResample[row,], prob = T, add = T, col = rgb(0,0,1,0.1))
 legend('topright', fill = c('black', 'red', 'blue'), legend = c("True", "Mice", "Resampled Mice"), bty = 'n')
 
-median(yPop)
-median(yImpute[row,])
-median(yResample[row,])
+mean(yPop)
+mean(yImpute[row,])
+mean(yResample[row,])
 

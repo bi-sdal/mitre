@@ -42,6 +42,8 @@ closestAddress = t(sapply(callNos, function(x){
   return(out)
 }))
 closestAddress = data.table(closestAddress)
+closestAddress = merge(closestAddress, policeData[,.(Call_No, LONGITUDE, LATITUDE)])
+
 
 houseIndex = data.table(closestHouse = 1:44642)
 
