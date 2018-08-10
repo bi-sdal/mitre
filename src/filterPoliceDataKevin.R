@@ -24,6 +24,7 @@ table(dispatch$Original_Call)
 dispatchAssault = filter(dispatch,  substr(Original_Call,1,4) == "ASLT")
 reportNumbersAssault = na.omit(dispatchAssault$Report_No)
 
+#test2
 #just domestic violence calls
 dispatchDOME = filter(dispatch, Original_Call == "DOME")
 reportNumbersDOME = na.omit(dispatchDOME$Report_No)
@@ -152,8 +153,4 @@ ASSAULTfinal <- sqldf('select a.Report_No, child_victim_count, adult_victim_coun
 #final output - assault (27 locations, 28 victims)
 ASSAULTfinal
 DOMEfinal
-
-
-
-
 
