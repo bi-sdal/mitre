@@ -18,8 +18,10 @@ pf_data_list$pums <- pf_pums
 
 ## marginal income -------------------------------------------------------------
 
-mi_sub <- dplyr::select(all_data$acs_marginalIncome, -1)
-pf_marginal_income <- count_missing_tidy(mi_sub)
+testthat::expect_true(names(all_data$acs_marginalIncome)[1] == "Id2")
+
+mi_sub <- dplyr::select(all_data$acs_marginalIncome, -1) # drop first column
+pf_marginal_income <- .GlobalEnv$count_missing_tidy(mi_sub)
 pf_data_list$marginal_income <- pf_marginal_income
 
 ## marginal room count ---------------------------------------------------------
