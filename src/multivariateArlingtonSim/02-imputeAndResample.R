@@ -1,9 +1,29 @@
 source("src/simulateArlingtons/multivariateArlingtonSim/01-prepareAndLoadData.R")
 
 nImputations = 1000
+imputationColumns = c("sqrtHINCP", "RMSP")
+bg = 1001001
+SD = filter(clAtrackPums, BlockGroup == bg | source == "PUMS")
+nHomes = nrow(filter(SD, BlockGroup == bg))
 
-imputed_draws = imputeWithMICE(filter(clAtrackPums, BlockGroup == 1001001 | source == "PUMS"), c("sqrtHINCP", "RMSP"), c("VALP", "TAXP2"), 
-                               imputations = nImputations, method = c('norm', 'cart', 'norm', 'norm'))
+imputed_draws = imputeWithMICE(SD, 
+                               impCol = imputationColumns, 
+                               regressorCols = c("VALP", "TAXP2"), 
+                               imputations = nImputations, 
+                               method = c('norm', 'cart', 'norm', 'norm'))
+
+### If a transformed variable is imputed, make sure to do the INVERSE TRANSFORMATION before passing it to the resampler
+
+imputed_draws[[1]] = imputed_draws[[1]]^2
+
+imputationsOut = do.call(rbind, imputed_draws) %>%
+  data.frame(houseID = filter(SD, BlockGroup == bg)$houseID, feature = rep(imputationColumns, each = nHomes), .) %>%
+  data.table
+setnames(x = imputationsOut, colnames(imputationsOut), new = c("houseID", "feature", paste0("imputation", 1:nImputations)))
+
+# Write imputations to file
+destFile = sprintf("bg%s_%s", bg, paste0(imputationColumns, collapse = '_'))
+
 
 ###
 ### END IMPUTATION STEP. NEXT FIND MARGINALS.
@@ -30,9 +50,8 @@ resamplers = mapply(resamplerCtor, marginals, breaks, models, parms, SIMPLIFY = 
 # hist(filter(clAtrackPums, BlockGroup == 1001001 | source == "PUMS")$RMSP, prob = TRUE, breaks = c(roomBreaks,10:20), ylim = c(0, .25))
 # lines(seq(0, 20, length = 100), sapply(seq(0, 20, length = 100), resamplers[[2]]$densityValue), col = 'red')
 
-### If a transformed variable is imputed, make sure to do the INVERSE TRANSFORMATION before passing it to the resampler
+# Begin resampling step
 
-imputed_draws[[1]] = imputed_draws[[1]]^2
 nDraws = 1000
 #blockGroups = filter(clAtrackPums, source != "PUMS")$BlockGroup
 resampledDraws = list()
@@ -42,7 +61,7 @@ nRows = nrow(filter(clAtrackPums, BlockGroup == 1001001))
 
 system.time(houseList <- lapply(1:nRows, indepJointDensityResample, imputedData = imputed_draws, resampler = resamplers, nDraws = nDraws))
 
-# featureList = lapply(1:length(houseList[[1]]), function(x){
+featureList = lapply(1:length(houseList[[1]]), function(x){
   resampledRows = lapply(houseList, '[[', x)
   return(unlist(resampledRows))
 })
