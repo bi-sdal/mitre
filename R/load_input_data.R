@@ -46,6 +46,19 @@ load_coreLogic <- function(path = "./data/mitre/original/synthpop_data/Arlington
     return(CLdata)
 }
 
+load_coreLogic_recode <- function() {
+    coreLogic_recode <- load_coreLogic()
+    # print(names(coreLogic_recode))
+    # print(head(coreLogic_recode))
+    coreLogic_recode$UNITS.NUMBER[coreLogic_recode$PropertyType != "Multifamily" & is.na(coreLogic_recode$UNITS.NUMBER)] <- 1
+    # print('here')
+    # print(head(coreLogic_recode))
+    coreLogic_recode <- na.omit(unique(coreLogic_recode[, PropertyType := NULL]))
+    # print(head(coreLogic_recode))
+    setkey(coreLogic_recode, BlockGroup)
+    return(coreLogic_recode)
+}
+
 
 
 load_some <- function(tbls) {
@@ -73,15 +86,7 @@ load_all <- function() {
                                          '150to200' = rowSums(acs_marginalIncome[,16]),
                                          '200plus'  = rowSums(acs_marginalIncome[,17]))
 
-    # print(names(coreLogic))
-    # print(head(coreLogic))
-    coreLogic_recode <- coreLogic
-    coreLogic_recode$UNITS.NUMBER[coreLogic_recode$PropertyType != "Multifamily" & is.na(coreLogic_recode$UNITS.NUMBER)] <- 1
-    # print('here')
-    # print(head(coreLogic_recode))
-    coreLogic_recode <- na.omit(unique(coreLogic_recode[, PropertyType := NULL]))
-    # print(head(coreLogic_recode))
-    setkey(coreLogic_recode, BlockGroup)
+    coreLogic_recode <- load_coreLogic_recode()
 
     return(list(
         'pums' = pums,
