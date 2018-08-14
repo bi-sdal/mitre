@@ -39,24 +39,24 @@ source("./src/SMARTscatter/01-prepareAndLoadData.R")
 # 2) Perform MICE imputations
 #
 
-for(bg in bgs) {
+sapply(bgs, function(bg){
   blockgroupPath = paste0(featurePath, "/bg_",bg)
   if(!dir.exists(blockgroupPath)) dir.create(blockgroupPath)
   source("./src/SMARTscatter/02-imputeWithMice.R")
   # Write imputations to file
   fwrite(imputationsOut, paste0(blockgroupPath, "/imputations.csv"))
-}
+})
 
 #
 # 3) Resample according to marginals
 #
 
-for(bg in bgs) {
+sapply(bgs, function(bg){
   imputationsPath = paste0(featurePath, "/bg_",bg, "/imputations.csv")
   source("./src/SMARTscatter/03-resample.R")
   # Write resamples to file
   fwrite(resamplesOut, paste0(featurePath, "/bg_",bg, "/resamples.csv"))
-}
+})
 
 #
 # 4) Put cases in homes
