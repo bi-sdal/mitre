@@ -1,6 +1,4 @@
-source("src/SMARTscatter/01-prepareAndLoadData.R")
-
-miceImp = fread("./data/mitre/working/imputationAndResamplingResults/bg1001001_sqrtHINCP_RMSP/imputations")
+imputationsIn = fread(imputationsPath)
 
 # The imputation variable is continuous, so it must be binned according to breaks. Breaks are the lower bounds.
 # We must also estimate a tail density
@@ -8,7 +6,7 @@ miceImp = fread("./data/mitre/working/imputationAndResamplingResults/bg1001001_s
 breaks = list(incomeBreaks = c(0,25000,50000,75000,100000,125000,150000,200000), roomBreaks = 1:9)
 cutoffs = list(expCutoff = breaks$incomeBreaks[length(breaks$incomeBreaks)], roomCutoff = breaks$roomBreaks[length(breaks$roomBreaks)])
 models = list("exponential", "geometric")
-marginals = list(marginalIncome[1, -1], marginalRooms[1, -1])
+marginals = list(marginalIncome[1, -1], marginalRooms[1, -1] + 1)
 
 highIncome = filter(clAtrackPums, source == "PUMS" & HINCP > cutoffs$expCutoff)[,'HINCP']
 manyRooms = filter(clAtrackPums, source == "PUMS" & RMSP > cutoffs$roomCutoff)[,'RMSP']
@@ -18,7 +16,7 @@ resamplers = mapply(resamplerCtor, marginals, breaks, models, parms, SIMPLIFY = 
 
 # Begin resampling step
 
-nDraws = 1000
+
 resampledDraws = list()
 nRows = nrow(filter(clAtrackPums, BlockGroup == 1001001))
 
@@ -26,14 +24,12 @@ nRows = nrow(filter(clAtrackPums, BlockGroup == 1001001))
 
 
 
-houseList = lapply(unique(miceImp$houseID), 
+houseList = lapply(unique(imputationsIn$houseID), 
                    indepJointDensityResample, 
-                   imputedData = miceImp, 
+                   imputedData = imputationsIn, 
                    resampler = resamplers, 
                    nDraws = nDraws)
 
 resamplesOut = do.call(rbind, houseList)
 
-destFile1 = paste0(imputationColumns, collapse = '_')
-destFile2 = paste0("bg_", bg)
-fwrite(resamplesOut, sprintf("./data/mitre/working/imputationAndResamplingResults/%s/%s/imputations.csv", destFile1, destFile2))
+

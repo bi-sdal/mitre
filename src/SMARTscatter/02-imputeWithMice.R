@@ -1,16 +1,11 @@
-source("./src/SMARTscatter/01-prepareAndLoadData.R")
-
-nImputations = 2
-imputationColumns = c("sqrtHINCP", "RMSP")
-bg = 1001001
 SD = filter(clAtrackPums, BlockGroup == bg | source == "PUMS")
 nHomes = nrow(filter(SD, BlockGroup == bg))
 
 imputed_draws = imputeWithMICE(SD, 
                                impCol = imputationColumns, 
-                               regressorCols = c("VALP", "TAXP2"), 
+                               regressorCols = imputationColumns, 
                                imputations = nImputations, 
-                               method = c('norm', 'cart', 'norm', 'norm'))
+                               method = miceMethods)
 
 ### If a transformed variable is imputed, make sure to do the INVERSE TRANSFORMATION before passing it to the resampler
 
@@ -21,10 +16,7 @@ imputationsOut = do.call(rbind, imputed_draws) %>%
   data.table
 setnames(x = imputationsOut, colnames(imputationsOut), new = c("houseID", "feature", paste0("imputation", 1:nImputations)))
 
-# Write imputations to file
-destFile1 = paste0(imputationColumns, collapse = '_')
-destFile2 = paste0("bg_", bg)
-fwrite(imputationsOut, sprintf("./data/mitre/working/imputationAndResamplingResults/%s/%s/imputations.csv", destFile1, destFile2))
+
 
 
 

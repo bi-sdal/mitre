@@ -134,7 +134,7 @@ resampleRow = function(yImputeRow, resampler){
 
 indepJointDensityResample = function(ID, imputedData, resampler, nDraws){
   
-  imputations = filter(miceImp, houseID == ID)
+  imputations = filter(imputedData, houseID == ID)
   nFeatures = nrow(imputations)
   
   probs = sapply(1:nFeatures, function(x) {
@@ -151,6 +151,7 @@ indepJointDensityResample = function(ID, imputedData, resampler, nDraws){
   rownames(out) = NULL
   return(out)
 }
+
 resamplerCtor = function(marginalTable, breakPoints, densityType, parms){
   widths = diff(breakPoints)
   marginalTable = unlist(marginalTable)
@@ -187,7 +188,6 @@ resamplerCtor = function(marginalTable, breakPoints, densityType, parms){
 
 
 probCaseInHouseSoftmax = function(callNumber, policeData, resData, connection, radius, maxCandidates, decayPenalty){
-  tmp <<- callNumber
   distancesToHomes = getHomesInRadius(callNumber, policeData, resData, connection, radius)
   if(is.null(distancesToHomes)) return(NULL)
   maxCandidates = min(maxCandidates, nrow(distancesToHomes))
@@ -195,4 +195,17 @@ probCaseInHouseSoftmax = function(callNumber, policeData, resData, connection, r
   homeSet = distancesToHomes[1:maxCandidates, .(Call_No = callNumber, houseID, distance)]
   homeSet$probInHouse = softmax(homeSet$distance, decayPenalty)
   return(homeSet)
+}
+
+assignCasesToHouse = function(probInHouseList, nDraws){
+  caseNos = unique(probInHouseList$Call_No)
+  nCases = length(caseNos)
+  out = matrix(NA, nCases, nDraws)
+  indices = probInHouseList[,sample(1:.N, nDraws, replace = TRUE,  prob = probInHouse),by = Call_No]
+  for(i in 1:nCases){
+    activeIndices = indices[Call_No == caseNos[i]]$V1
+    out[i,] = probInHouseList[Call_No == caseNos[i]][activeIndices,houseID]
+  }
+  colnames(out) = paste0("resample", 1:nDraws)
+  return(data.table(Call_No = caseNos, out)) 
 }

@@ -1,6 +1,3 @@
-source("./R/00-simulateArlFunctions.R")
-library(data.table)
-nDraws = 1000
 resamples = fread("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP/bg_1001001/resamples.csv")
 colnames(resamples)[1] = "houseID"
 assignments = fread("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP/caseAssignments.csv")
@@ -17,4 +14,4 @@ logisticRegressions = lapply(1:nDraws, function(x){
   glm(caseInHouse ~ RMSP + sqrtHINCP, data = data, family = binomial)
 })
 
-save(logisticRegressions,file =  "./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP/logisticRegressions.Rdata")
+
