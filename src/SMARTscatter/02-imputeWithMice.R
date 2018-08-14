@@ -1,6 +1,6 @@
-source("src/simulateArlingtons/multivariateArlingtonSim/01-prepareAndLoadData.R")
+source("./src/SMARTscatter/01-prepareAndLoadData.R")
 
-nImputations = 1000
+nImputations = 2
 imputationColumns = c("sqrtHINCP", "RMSP")
 bg = 1001001
 SD = filter(clAtrackPums, BlockGroup == bg | source == "PUMS")
@@ -22,8 +22,9 @@ imputationsOut = do.call(rbind, imputed_draws) %>%
 setnames(x = imputationsOut, colnames(imputationsOut), new = c("houseID", "feature", paste0("imputation", 1:nImputations)))
 
 # Write imputations to file
-destFile = sprintf("bg%s_%s", bg, paste0(imputationColumns, collapse = '_'))
-fwrite(imputationsOut, sprintf("./data/mitre/working/imputationAndResamplingResults/%s/imputations.csv", destFile))
+destFile1 = paste0(imputationColumns, collapse = '_')
+destFile2 = paste0("bg_", bg)
+fwrite(imputationsOut, sprintf("./data/mitre/working/imputationAndResamplingResults/%s/%s/imputations.csv", destFile1, destFile2))
 
 
 

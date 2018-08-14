@@ -24,25 +24,6 @@ nRows = nrow(filter(clAtrackPums, BlockGroup == 1001001))
 
 # Each element of houselist is a home. It is i by j where i is the number of features and j is the number of imputations
 
-indepJointDensityResample = function(ID, imputedData, resampler, nDraws){
-  
-  imputations = filter(miceImp, houseID == ID)
-  nFeatures = nrow(imputations)
-  
-  probs = sapply(1:nFeatures, function(x) {
-    unname(sapply(imputations[x,-c(1:2)], resampler[[x]]$densityValue))
-  })
-  probs = apply(probs, 2, function(x) x/sum(x))
-  probs = apply(probs, 1, prod)
-  probs = probs/sum(probs)
-  
-  resampledCols = sample(3:ncol(imputations), nDraws, T, probs)
-  
-  out = imputations[, c(1:2, resampledCols)]
-  colnames(out) = c("hosueID", "feature", paste0("resample", 1:(ncol(imputations) - 2)))
-  rownames(out) = NULL
-  return(out)
-}
 
 
 houseList = lapply(unique(miceImp$houseID), 
@@ -52,5 +33,7 @@ houseList = lapply(unique(miceImp$houseID),
                    nDraws = nDraws)
 
 resamplesOut = do.call(rbind, houseList)
-fwrite(resamplesOut, "./data/mitre/working/imputationAndResamplingResults/bg1001001_sqrtHINCP_RMSP/resamples.csv")
 
+destFile1 = paste0(imputationColumns, collapse = '_')
+destFile2 = paste0("bg_", bg)
+fwrite(resamplesOut, sprintf("./data/mitre/working/imputationAndResamplingResults/%s/%s/imputations.csv", destFile1, destFile2))

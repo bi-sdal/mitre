@@ -131,22 +131,26 @@ resampleRow = function(yImputeRow, resampler){
   return(sample(yImputeRow, length(yImputeRow), replace = TRUE, prob = resampleProbs))
 }
 
-indepJointDensityResample = function(resampleRow, imputedData, resampler, nDraws){
+
+indepJointDensityResample = function(ID, imputedData, resampler, nDraws){
   
-  imputations = do.call(rbind, lapply(imputedData, function(x) x[resampleRow,]))
-  nFeatures = length(imputedData)
+  imputations = filter(miceImp, houseID == ID)
+  nFeatures = nrow(imputations)
   
   probs = sapply(1:nFeatures, function(x) {
-    unname(sapply(imputations[x,], resampler[[x]]$densityValue))
+    unname(sapply(imputations[x,-c(1:2)], resampler[[x]]$densityValue))
   })
   probs = apply(probs, 2, function(x) x/sum(x))
   probs = apply(probs, 1, prod)
   probs = probs/sum(probs)
   
-  resampledDraws = imputations[,sample(1:ncol(imputations), nDraws, T, probs)]
-  return(as.matrix(resampledDraws))
+  resampledCols = sample(3:ncol(imputations), nDraws, T, probs)
+  
+  out = imputations[, c(1:2, resampledCols)]
+  colnames(out) = c("houseID", "feature", paste0("resample", 1:(ncol(imputations) - 2)))
+  rownames(out) = NULL
+  return(out)
 }
-
 resamplerCtor = function(marginalTable, breakPoints, densityType, parms){
   widths = diff(breakPoints)
   marginalTable = unlist(marginalTable)
@@ -181,3 +185,14 @@ resamplerCtor = function(marginalTable, breakPoints, densityType, parms){
   out = list(breakPoints = breakPoints, densityValue = densityValue, parameters = parms)
 }
 
+
+probCaseInHouseSoftmax = function(callNumber, policeData, resData, connection, radius, maxCandidates, decayPenalty){
+  tmp <<- callNumber
+  distancesToHomes = getHomesInRadius(callNumber, policeData, resData, connection, radius)
+  if(is.null(distancesToHomes)) return(NULL)
+  maxCandidates = min(maxCandidates, nrow(distancesToHomes))
+  setorder(distancesToHomes, distance)
+  homeSet = distancesToHomes[1:maxCandidates, .(Call_No = callNumber, houseID, distance)]
+  homeSet$probInHouse = softmax(homeSet$distance, decayPenalty)
+  return(homeSet)
+}
