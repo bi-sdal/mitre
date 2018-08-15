@@ -51,7 +51,7 @@ findMarginalDensity = function(marginData, income, blockgroup){
 imputeWithMICE = function(data, impCol, regressorCols, imputations = 50, ...){
   miceData = data[,c(impCol, regressorCols)]
   
-  mice.out <- mice(data=miceData, m = imputations, ...)
+  mice.out <- mice(data=miceData, m = imputations, print = FALSE, ...)
   #mice.out <- mice(data=miceData, m = imputations)
   if(length(impCol) == 1) return(as.matrix(mice.out$imp[[impCol]]))
   if(length(impCol) > 1) return(as.matrix(mice.out$imp[impCol]))
