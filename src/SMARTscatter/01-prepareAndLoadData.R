@@ -1,10 +1,3 @@
-
-library(dplyr)
-library(mice)
-library(data.table)
-source("./R/00-simulateArlFunctions.R")
-source("./R/geocode.R")
-
 # CLdata is corelogic housing data
 marginalIncome = read.csv("./data/mitre/working/simulatedArlingtonData/marginalIncome.csv")
 marginalRooms = read.csv("./data/mitre/working/simulatedArlingtonData/marginalRooms.csv")
