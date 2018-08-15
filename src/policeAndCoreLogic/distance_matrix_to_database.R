@@ -14,4 +14,8 @@ DBI::dbWriteTable(conn = con, name = 'police_distances_long', value = dt_long,
 
 # make data science go vroom vroom
 DBI::dbSendQuery(con, 'CREATE INDEX police ON police_distances_long (police);')
-DBI::dbSendQuery(con, 'CREATE INDEX police_house ON police_distances_long (police, house);')
+DBI::dbSendQuery(con, 'CREATE INDEX house ON police_distances_long (house);')
+
+# probably don't need to index on both at the same time,
+# takes really long, and you're pretty much indexing the entire table
+#DBI::dbSendQuery(con, 'CREATE INDEX police_house ON police_distances_long (police, house);')
