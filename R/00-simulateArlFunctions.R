@@ -147,7 +147,7 @@ indepJointDensityResample = function(ID, imputedData, resampler, nDraws){
   resampledCols = sample(3:ncol(imputations), nDraws, T, probs)
   
   out = imputations[, c(1:2, resampledCols)]
-  colnames(out) = c("houseID", "feature", paste0("resample", 1:(ncol(imputations) - 2)))
+  colnames(out) = c("houseID", "feature", paste0("resample", 1:nDraws))
   rownames(out) = NULL
   return(out)
 }
@@ -180,7 +180,8 @@ resamplerCtor = function(marginalTable, breakPoints, densityType, parms){
                           }else{
                             return(marginDensity[bin])
                           }
-                        }
+                        },
+                        constant = function(y) {return(1)}
   )
   
   out = list(breakPoints = breakPoints, densityValue = densityValue, parameters = parms)

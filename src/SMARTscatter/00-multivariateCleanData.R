@@ -62,8 +62,40 @@ setkey(rentalData, BlockGroup)
 # Read in PUMS
 #
 
-PUMS = fread("./data/mitre/original/synthpop_data/ss14hva.csv")
-PUMS = PUMS[PUMA10 %in% c(1301, 1302) & VALP < 1500000 & HINCP >= 0, .(PUMA10, HINCP, VALP, TAXP, RMSP)]
+PUMS = fread("./data/mitre/original/PUMS2016/householdPUMS2016VA.csv")
+PUMS = PUMS[PUMA %in% c(1301, 1302) & VALP < 1500000 & HINCP >= 0, .(SERIALNO, PUMA, HINCP, VALP, TAXP, RMSP)]
+
+personPUMS = fread("./data/mitre/original/PUMS2016/personPUMS2016VA.csv")[SERIALNO %in% PUMS$SERIALNO]
+
+# Make household level summaries based on the perosnPUMS data
+
+householdSize = personPUMS[,.(householdSize = .N), by = SERIALNO]
+singleParent = personPUMS[,
+                          .(singleParent = ifelse(2 %in% .SD$RELP & !(1 %in% .SD$RELP), 1, 0)), 
+                          by = SERIALNO]
+
+
+# Don't have young parents
+# findYoungParent = function(pums){
+#   if(!(2 %in% pums$RELP)) return(0)
+#   parentsAge = pums[RELP %in% c(0, 1), AGEP]
+#   if(min(parentsAge) < 34) return(1)
+#   return(0)
+# }
+
+
+# youngParent = personPUMS[,
+#                          .(youngParent = do.call(findYoungParent, list(.SD))),
+#                          by = SERIALNO]
+
+# RAC1P = 1 -> white
+nonwhite
+
+
+
+# Drop SERIALNO after merging
+
+PUMS = PUMS[householdSize, on = 'SERIALNO'][singleParent, on = 'SERIALNO'][,SERIALNO:=NULL]
 
 # ------------------------------------------------------------------------------------------------
 # TAXP is binned. To use it as a predictor in our model we convert it into $$ by taking the center value of each bin.

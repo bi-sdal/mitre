@@ -15,17 +15,18 @@ source("./src/SMARTscatter/01-prepareAndLoadData.R")
 
 # Define global parameters
 t0 = Sys.time()
-nImputations = 100
-nDraws = 100
-imputationColumns = c("sqrtHINCP", "RMSP")
-miceMethods = c('norm', 'cart', 'norm', 'norm')
+nImputations = 1500
+nDraws = 750
+regCols = c('VALP', 'TAXP2')
+imputationColumns = c("sqrtHINCP", "RMSP", "householdSize", 'singleParent')
+miceMethods = c('norm', 'cart', 'cart', 'cart', 'norm', 'norm')
 
 # Paramerters for resampling
 
-breaks = list(incomeBreaks = c(0,25000,50000,75000,100000,125000,150000,200000), roomBreaks = 1:9)
-cutoffs = list(expCutoff = breaks$incomeBreaks[length(breaks$incomeBreaks)], roomCutoff = breaks$roomBreaks[length(breaks$roomBreaks)])
-models = list("exponential", "geometric")
-marginals = list(marginalIncome[1, -1], marginalRooms[1, -1] + 1)
+breaks = list(incomeBreaks = c(0,25000,50000,75000,100000,125000,150000,200000), roomBreaks = 1:9, sizeBreaks = NULL, spBreaks = NULL)
+cutoffs = list(expCutoff = breaks$incomeBreaks[length(breaks$incomeBreaks)], roomCutoff = breaks$roomBreaks[length(breaks$roomBreaks)], sizeCutoff = NULL, spCutoff = NULL)
+models = list("exponential", "geometric", 'constant', 'constant')
+marginals = list(marginalIncome[1, -1], marginalRooms[1, -1] + 1, NULL, NULL)
 
 # Make directiries (if needed)
 
@@ -54,7 +55,7 @@ sfSource("./R/00-simulateArlFunctions.R")
 sfLibrary(dplyr)
 sfLibrary(mice)
 sfLibrary(data.table)
-sfExport('bgs', 'featurePath', 'nImputations', 'nDraws', 'imputationColumns', 'miceMethods', 'clAtrackPums', 'breaks', 'cutoffs', 'models', 'marginals')
+sfExport('bgs', 'featurePath', 'nImputations', 'nDraws', 'imputationColumns', 'regCols', 'miceMethods', 'clAtrackPums', 'breaks', 'cutoffs', 'models', 'marginals')
 
 
 
@@ -70,7 +71,7 @@ sfSapply(bgs, function(bg){
   
   imputed_draws = imputeWithMICE(SD, 
                                  impCol = imputationColumns, 
-                                 regressorCols = imputationColumns, 
+                                 regressorCols = regCols, 
                                  imputations = nImputations, 
                                  method = miceMethods)
   
@@ -99,7 +100,7 @@ sapply(bgs, function(bg){
   
   highIncome = filter(clAtrackPums, source == "PUMS" & HINCP > cutoffs$expCutoff)[,'HINCP']
   manyRooms = filter(clAtrackPums, source == "PUMS" & RMSP > cutoffs$roomCutoff)[,'RMSP']
-  parms = list(mleLambda = 1 / mean(highIncome - cutoffs$expCutoff), mleGeom = 1 / mean(manyRooms - cutoffs$roomCutoff))
+  parms = list(mleLambda = 1 / mean(highIncome - cutoffs$expCutoff), mleGeom = 1 / mean(manyRooms - cutoffs$roomCutoff), NULL, NULL)
   
   resamplers = mapply(resamplerCtor, marginals, breaks, models, parms, SIMPLIFY = FALSE)
   
@@ -107,11 +108,8 @@ sapply(bgs, function(bg){
   
   
   resampledDraws = list()
-  nRows = nrow(filter(clAtrackPums, BlockGroup == 1001001))
   
   # Each element of houselist is a home. It is i by j where i is the number of features and j is the number of imputations
-  
-  
   
   houseList = lapply(unique(imputationsIn$houseID), 
                      indepJointDensityResample, 
@@ -135,8 +133,8 @@ sapply(bgs, function(bg){
 # 5) Do logistic regression
 #
 
-source("./src/SMARTscatter/05-logisticRegressions.R")
-save(logisticRegressions,file =  paste0(featurePath, "/logisticRegressions.Rdata"))
+# source("./src/SMARTscatter/05-logisticRegressions.R")
+# save(logisticRegressions,file =  paste0(featurePath, "/logisticRegressions.Rdata"))
 
 t1 = Sys.time() - t0
 t1
