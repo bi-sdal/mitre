@@ -63,7 +63,7 @@ setkey(rentalData, BlockGroup)
 #
 
 PUMS = fread("./data/mitre/original/PUMS2016/householdPUMS2016VA.csv")
-PUMS = PUMS[PUMA %in% c(1301, 1302) & VALP < 1500000 & HINCP >= 0, .(SERIALNO, PUMA, HINCP, VALP, TAXP, RMSP)]
+PUMS = PUMS[PUMA %in% c(1301, 1302) & VALP < 1500000 & HINCP >= 0, .(SERIALNO, PUMA, HINCP, VALP, TAXP, RMSP, unmarriedPartner = ifelse(PARTNER %in% c(1, 2, 3, 4), TRUE, FALSE), multiGenHouse = ifelse(MULTG == 2, TRUE, FALSE))]
 
 personPUMS = fread("./data/mitre/original/PUMS2016/personPUMS2016VA.csv")[SERIALNO %in% PUMS$SERIALNO]
 
@@ -73,6 +73,17 @@ householdSize = personPUMS[,.(householdSize = .N), by = SERIALNO]
 singleParent = personPUMS[,
                           .(singleParent = ifelse(2 %in% .SD$RELP & !(1 %in% .SD$RELP), 1, 0)), 
                           by = SERIALNO]
+
+# Disability flag, 1 is disability, applicable to children RELP == 2
+specialNeedsKid = personPUMS[RELP == 2,
+                             .(snFlag = 1 %in% c(DDRS, DEAR, DEYE, DOUT, DPHY, DREM)),
+                             by = SERIALNO]
+# Flag for non-active duty women
+milWoman = personPUMS[RELP %in% c(0, 1),
+           .(milWoman = MIL %in% 2:3 & SEX == 2),
+           by = SERIALNO]
+
+
 
 
 # Don't have young parents
@@ -88,8 +99,6 @@ singleParent = personPUMS[,
 #                          .(youngParent = do.call(findYoungParent, list(.SD))),
 #                          by = SERIALNO]
 
-# RAC1P = 1 -> white
-nonwhite
 
 
 

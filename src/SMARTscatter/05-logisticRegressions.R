@@ -4,11 +4,11 @@ assignments = fread(paste0(featurePath, "/caseAssignments.csv"))
 
 sfExport('resamples', 'assignments')
 
-logisticRegressions = sfLapply(1:5, function(x){
+logisticRegressions = lapply(1:5, function(x){
   rsName = paste0('resample', x)
   X = suppressMessages(dcast(resamples[,.(houseID, feature, get(rsName))], houseID ~ feature))
   
-  y = assignments[,.(Call_No, houseID = get(rsName))]
+  y = unique(assignments[,.(Call_No, houseID = get(rsName))], by = 'houseID')
   
   data = merge(X, data.table(houseID = y$houseID, caseInHouse = 1), all.x = TRUE)
   data[is.na(data)] = 0
@@ -19,5 +19,3 @@ logisticRegressions = sfLapply(1:5, function(x){
 })
 
 for(i in 1:nDraws) logisticRegressions[[i]]$data = NULL
-
-lapply(logisticRegressions, summary)

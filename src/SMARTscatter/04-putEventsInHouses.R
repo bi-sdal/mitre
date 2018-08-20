@@ -1,5 +1,5 @@
 # Load police incident data and house locations
-
+dan = fread('./data/mitre/final/police/dome_replicated.csv')
 policeData = fread("./data/mitre/working/PoliceData/policeData.csv")
 clAtrack = fread("./data/mitre/working/cleanedExampleData/clAtrackPumsMultivariate.csv")[source != "PUMS"]
 conDist = sdalr::con_db("mitre")
