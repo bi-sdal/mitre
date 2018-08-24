@@ -3,7 +3,7 @@ nHomes = nrow(filter(SD, BlockGroup == bg))
 
 imputed_draws = imputeWithMICE(SD, 
                                impCol = imputationColumns, 
-                               regressorCols = imputationColumns, 
+                               regressorCols = regCols, 
                                imputations = nImputations, 
                                method = miceMethods)
 

@@ -62,8 +62,61 @@ setkey(rentalData, BlockGroup)
 # Read in PUMS
 #
 
-PUMS = fread("./data/mitre/original/synthpop_data/ss14hva.csv")
-PUMS = PUMS[PUMA10 %in% c(1301, 1302) & VALP < 1500000 & HINCP >= 0, .(PUMA10, HINCP, VALP, TAXP, RMSP)]
+PUMS = fread("./data/mitre/original/PUMS2016/householdPUMS2016VA.csv")
+PUMS = PUMS[PUMA %in% c(1301, 1302) & VALP < 1500000 & HINCP >= 0, .(SERIALNO, PUMA, HINCP, VALP, TAXP, RMSP, unmarriedPartner = ifelse(PARTNER %in% c(1, 2, 3, 4), TRUE, FALSE), multiGenHouse = ifelse(MULTG == 2, TRUE, FALSE))]
+
+personPUMS = fread("./data/mitre/original/PUMS2016/personPUMS2016VA.csv")[SERIALNO %in% PUMS$SERIALNO]
+
+# Make household level summaries based on the perosnPUMS data
+
+householdSize = personPUMS[,.(householdSize = .N), by = SERIALNO]
+singleParent = personPUMS[,
+                          .(singleParent = ifelse(2 %in% .SD$RELP & !(1 %in% .SD$RELP), TRUE, FALSE)), 
+                          by = SERIALNO]
+
+# Disability flag, 1 is disability, applicable to children RELP == 2
+findSpecialNeedsKid = function(pums){
+  isKid = (pums$RELP == 2)
+  hasDisability = apply(pums[,.(DDRS, DEAR, DEYE, DOUT, DPHY, DREM)], 1, function(x) 1 %in% x)
+  return(any(isKid & hasDisability))
+}
+
+specialNeedsKid = personPUMS[,
+                             .(snKid = findSpecialNeedsKid(.SD)),
+                             by = SERIALNO]
+# Flag for non-active duty women
+findActiveDutyWoman= function(pums){
+  milStatus = (pums$MIL %in% 2:3)
+  isWoman = (pums$SEX == 2)
+  return(any(milStatus & isWoman))
+}
+
+milWoman = personPUMS[,
+                      .(milWoman = findActiveDutyWoman(.SD)),
+                      by = SERIALNO]
+
+
+
+
+# Don't have young parents
+# findYoungParent = function(pums){
+#   if(!(2 %in% pums$RELP)) return(0)
+#   parentsAge = pums[RELP %in% c(0, 1), AGEP]
+#   if(min(parentsAge) < 34) return(1)
+#   return(0)
+# }
+
+
+# youngParent = personPUMS[,
+#                          .(youngParent = do.call(findYoungParent, list(.SD))),
+#                          by = SERIALNO]
+
+
+
+
+# Drop SERIALNO after merging
+
+PUMS = PUMS[householdSize, on = 'SERIALNO'][singleParent, on = 'SERIALNO'][specialNeedsKid, on = 'SERIALNO'][milWoman, on = 'SERIALNO'][,SERIALNO:=NULL]
 
 # ------------------------------------------------------------------------------------------------
 # TAXP is binned. To use it as a predictor in our model we convert it into $$ by taking the center value of each bin.
