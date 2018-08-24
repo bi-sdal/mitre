@@ -1,45 +1,6 @@
-# Load packages and source function scripts
-library(dplyr)
-library(mice)
-library(data.table)
-library(snowfall)
-source("./R/00-simulateArlFunctions.R")
-source("./R/geocode.R")
+# 1) Source Parametersm init snowfall
 
-#
-# Load prepared data
-#
-
-source("./src/SMARTscatter/01-prepareAndLoadData.R")
-
-
-# Define global parameters
-t0 = Sys.time()
-nImputations = 1500
-nDraws = 750
-regCols = c('VALP', 'TAXP2')
-imputationColumns = c("sqrtHINCP", "RMSP", "householdSize", 'singleParent')
-miceMethods = c('norm', 'cart', 'cart', 'cart', 'norm', 'norm')
-
-# Paramerters for resampling
-
-breaks = list(incomeBreaks = c(0,25000,50000,75000,100000,125000,150000,200000), roomBreaks = 1:9, sizeBreaks = NULL, spBreaks = NULL)
-cutoffs = list(expCutoff = breaks$incomeBreaks[length(breaks$incomeBreaks)], roomCutoff = breaks$roomBreaks[length(breaks$roomBreaks)], sizeCutoff = NULL, spCutoff = NULL)
-models = list("exponential", "geometric", 'constant', 'constant')
-marginals = list(marginalIncome[1, -1], marginalRooms[1, -1] + 1, NULL, NULL)
-
-# Make directiries (if needed)
-
-featurePath = sprintf("./data/mitre/working/imputationAndResamplingResults/%s", paste0(imputationColumns, collapse = '_'))
-if(!dir.exists(featurePath)) dir.create(featurePath)
-
-bgs = na.omit(unique(clAtrackPums$BlockGroup))
-
-
-# The maximum number of addresses to consider as possible candidates for the softmax.
-maxCandidates = 20
-# The decay penalty lowers the probability of an event happening at distant houses. Must be less than zero
-decayPenalty = -50
+source("./src/SMARTscatter/parameterFiles/allDataFullRuns.R")
 
 #
 # RUN THE CODE
@@ -58,11 +19,10 @@ sfLibrary(data.table)
 sfExport('bgs', 'featurePath', 'nImputations', 'nDraws', 'imputationColumns', 'regCols', 'miceMethods', 'clAtrackPums', 'breaks', 'cutoffs', 'models', 'marginals')
 
 
-
 #
 # 2) Perform MICE imputations
 #
-
+t0 = Sys.time()
 sfSapply(bgs, function(bg){
   blockgroupPath = paste0(featurePath, "/bg_",bg)
   if(!dir.exists(blockgroupPath)) dir.create(blockgroupPath)
@@ -121,20 +81,6 @@ sapply(bgs, function(bg){
   # Write resamples to file
   fwrite(resamplesOut, paste0(featurePath, "/bg_",bg, "/resamples.csv"))
 })
-
-#
-# 4) Put cases in homes
-#
-
-# source("./src/SMARTscatter/04-putEventsInHouses.R")
-# fwrite(houseAssignments, paste0(featurePath, "/caseAssignments.csv"))
-
-#
-# 5) Do logistic regression
-#
-
-# source("./src/SMARTscatter/05-logisticRegressions.R")
-# save(logisticRegressions,file =  paste0(featurePath, "/logisticRegressions.Rdata"))
 
 t1 = Sys.time() - t0
 t1

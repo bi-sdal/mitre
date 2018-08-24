@@ -71,17 +71,29 @@ personPUMS = fread("./data/mitre/original/PUMS2016/personPUMS2016VA.csv")[SERIAL
 
 householdSize = personPUMS[,.(householdSize = .N), by = SERIALNO]
 singleParent = personPUMS[,
-                          .(singleParent = ifelse(2 %in% .SD$RELP & !(1 %in% .SD$RELP), 1, 0)), 
+                          .(singleParent = ifelse(2 %in% .SD$RELP & !(1 %in% .SD$RELP), TRUE, FALSE)), 
                           by = SERIALNO]
 
 # Disability flag, 1 is disability, applicable to children RELP == 2
-specialNeedsKid = personPUMS[RELP == 2,
-                             .(snFlag = 1 %in% c(DDRS, DEAR, DEYE, DOUT, DPHY, DREM)),
+findSpecialNeedsKid = function(pums){
+  isKid = (pums$RELP == 2)
+  hasDisability = apply(pums[,.(DDRS, DEAR, DEYE, DOUT, DPHY, DREM)], 1, function(x) 1 %in% x)
+  return(any(isKid & hasDisability))
+}
+
+specialNeedsKid = personPUMS[,
+                             .(snKid = findSpecialNeedsKid(.SD)),
                              by = SERIALNO]
 # Flag for non-active duty women
-milWoman = personPUMS[RELP %in% c(0, 1),
-           .(milWoman = MIL %in% 2:3 & SEX == 2),
-           by = SERIALNO]
+findActiveDutyWoman= function(pums){
+  milStatus = (pums$MIL %in% 2:3)
+  isWoman = (pums$SEX == 2)
+  return(any(milStatus & isWoman))
+}
+
+milWoman = personPUMS[,
+                      .(milWoman = findActiveDutyWoman(.SD)),
+                      by = SERIALNO]
 
 
 
@@ -104,7 +116,7 @@ milWoman = personPUMS[RELP %in% c(0, 1),
 
 # Drop SERIALNO after merging
 
-PUMS = PUMS[householdSize, on = 'SERIALNO'][singleParent, on = 'SERIALNO'][,SERIALNO:=NULL]
+PUMS = PUMS[householdSize, on = 'SERIALNO'][singleParent, on = 'SERIALNO'][specialNeedsKid, on = 'SERIALNO'][milWoman, on = 'SERIALNO'][,SERIALNO:=NULL]
 
 # ------------------------------------------------------------------------------------------------
 # TAXP is binned. To use it as a predictor in our model we convert it into $$ by taking the center value of each bin.

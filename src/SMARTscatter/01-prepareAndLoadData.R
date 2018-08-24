@@ -8,4 +8,3 @@ clAtrackPums$HINCP[!is.na(clAtrackPums$UNITS.NUMBER)] = clAtrackPums$HINCP[!is.n
 clAtrackPums$VALP[!is.na(clAtrackPums$UNITS.NUMBER)] = clAtrackPums$VALP[!is.na(clAtrackPums$UNITS.NUMBER)]/clAtrackPums$UNITS.NUMBER[!is.na(clAtrackPums$UNITS.NUMBER)]
 clAtrackPums$TAXP2[!is.na(clAtrackPums$UNITS.NUMBER)] = clAtrackPums$TAXP2[!is.na(clAtrackPums$UNITS.NUMBER)]/clAtrackPums$UNITS.NUMBER[!is.na(clAtrackPums$UNITS.NUMBER)]
 clAtrackPums$sqrtHINCP = sqrt(clAtrackPums$HINCP)
-clAtrackPums$singleParent = as.factor(clAtrackPums$singleParent)

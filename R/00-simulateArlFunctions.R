@@ -70,9 +70,9 @@ computePoliceToResidenciesDist = function(policeLonLat, residenciesLonLat){
 }
 
 
-getHomesInRadius = function(callNumber, policeData, resData, connection, radius = .2){
-  distMatRow = match(callNumber, policeData$Call_No)
-  dists = DBI::dbGetQuery(connection, sprintf("SELECT * FROM police_distances_long WHERE police = '%s';", distMatRow))$distance
+getHomesInRadius = function(callNumber, policeData, resData, connection, radius = .2, table){
+  #distMatRow = match(callNumber, policeData$Call_No)
+  dists = DBI::dbGetQuery(connection, sprintf("SELECT * FROM %s WHERE police = '%s';", table, callNumber))$distance
   cols = which(dists < radius)
   if(length(cols) == 0){
     warning("No records were found in the given radius.")
@@ -188,8 +188,8 @@ resamplerCtor = function(marginalTable, breakPoints, densityType, parms){
 }
 
 
-probCaseInHouseSoftmax = function(callNumber, policeData, resData, connection, radius, maxCandidates, decayPenalty){
-  distancesToHomes = getHomesInRadius(callNumber, policeData, resData, connection, radius)
+probCaseInHouseSoftmax = function(callNumber, policeData, resData, connection, radius, table, maxCandidates, decayPenalty){
+  distancesToHomes = getHomesInRadius(callNumber, policeData, resData, connection, radius, table)
   if(is.null(distancesToHomes)) return(NULL)
   maxCandidates = min(maxCandidates, nrow(distancesToHomes))
   setorder(distancesToHomes, distance)

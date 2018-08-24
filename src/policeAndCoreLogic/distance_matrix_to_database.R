@@ -9,12 +9,12 @@ setnames(dt_long, 'V1', 'police')
 
 
 con <- sdalr::con_db('mitre')
-DBI::dbWriteTable(conn = con, name = 'police_distances_long', value = dt_long,
+DBI::dbWriteTable(conn = con, name = 'ca_ipv_ea_events', value = dt_long,
                   row.names = FALSE, overwrite = TRUE)
 
 # make data science go vroom vroom
-DBI::dbSendQuery(con, 'CREATE INDEX police ON police_distances_long (police);')
-DBI::dbSendQuery(con, 'CREATE INDEX house ON police_distances_long (house);')
+DBI::dbSendQuery(con, 'CREATE INDEX police_ca_ipv_ea ON ca_ipv_ea_events (police);')
+DBI::dbSendQuery(con, 'CREATE INDEX house_ca_ipv_ea ON ca_ipv_ea_events (house);')
 
 # probably don't need to index on both at the same time,
 # takes really long, and you're pretty much indexing the entire table
