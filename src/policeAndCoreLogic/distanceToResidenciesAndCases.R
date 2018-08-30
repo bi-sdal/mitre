@@ -5,17 +5,22 @@ library(geosphere)
 library(snowfall)
 library(microbenchmark)
 library(sf)
-source("./src/simulateArlingtons/00-simulateArlFunctions.R")
+source("./R/00-simulateArlFunctions.R")
 
 #Load data
 #Police data
 #Columns: Rep_Dist is a code describing what happened; Disposition???; Priority???; UNITS_NUMBER no apts;
 
-policeData = fread("./data/mitre/working/PoliceData/policeData.csv")
-policeLonLat = policeData[,.(LONGITUDE, LATITUDE)]
+policeToResidenciesDistances = fread('./data/mitre/final/police/dome_geocoded.csv')
+
+# Manually remove events that happened at 1425 N Courthouse
+policeData = na.omit(policeToResidenciesDistances[-c(50:65)])
+
+policeLonLat = unique(policeData, by = 'Report_No')[,.(lon, lat)]
+colnames(policeLonLat) = c('LONGITUDE', 'LATITUDE')
 # Residencies data
 
-clAtrackPums = fread("./data/mitre/working/cleanedExampleData/clAtrackPums.csv")
+clAtrackPums = fread("./data/mitre/working/cleanedExampleData/clAtrackPumsMultivariate.csv")[source != "PUMS"]
 residenciesLonLat = na.omit(clAtrackPums[,.(LONGITUDE, LATITUDE)])
 
 
@@ -25,14 +30,15 @@ residenciesLonLat = na.omit(clAtrackPums[,.(LONGITUDE, LATITUDE)])
 sfInit(parallel=TRUE, cpus=24)
 sfLibrary(data.table)
 sfLibrary(geosphere)
-sfExport('policeToResidenciesDist')
+sfSource("./R/00-simulateArlFunctions.R")
 #Export unique lon/lat coords to clusters
 sfExport('policeLonLat')
 sfExport('residenciesLonLat')
 
 #Each row corresponds to a police event, each column a CL lat long
 system.time(policeToResidenciesDistances <- t(sfApply(policeLonLat, 1, computePoliceToResidenciesDist, residenciesLonLat = residenciesLonLat)))
-write.csv(tmp, "./data/mitre/working/PoliceData/distMatrix.csv", row.names = FALSE)
+
+write.csv(cbind(unique(policeData$Report_No), policeToResidenciesDistances), "./data/mitre/working/PoliceData/distMatrix.csv", row.names = FALSE)
 
 
 

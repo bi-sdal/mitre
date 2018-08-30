@@ -70,9 +70,9 @@ computePoliceToResidenciesDist = function(policeLonLat, residenciesLonLat){
 }
 
 
-getHomesInRadius = function(callNumber, policeData, resData, connection, radius = .2){
-  distMatRow = match(callNumber, policeData$Call_No)
-  dists = DBI::dbGetQuery(connection, sprintf("SELECT * FROM police_distances_long WHERE police = '%s';", distMatRow))$distance
+getHomesInRadius = function(callNumber, policeData, resData, connection, radius = .2, table){
+  #distMatRow = match(callNumber, policeData$Call_No)
+  dists = DBI::dbGetQuery(connection, sprintf("SELECT * FROM %s WHERE police = '%s';", table, callNumber))$distance
   cols = which(dists < radius)
   if(length(cols) == 0){
     warning("No records were found in the given radius.")
@@ -147,7 +147,7 @@ indepJointDensityResample = function(ID, imputedData, resampler, nDraws){
   resampledCols = sample(3:ncol(imputations), nDraws, T, probs)
   
   out = imputations[, c(1:2, resampledCols)]
-  colnames(out) = c("houseID", "feature", paste0("resample", 1:(ncol(imputations) - 2)))
+  colnames(out) = c("houseID", "feature", paste0("resample", 1:nDraws))
   rownames(out) = NULL
   return(out)
 }
@@ -180,15 +180,16 @@ resamplerCtor = function(marginalTable, breakPoints, densityType, parms){
                           }else{
                             return(marginDensity[bin])
                           }
-                        }
+                        },
+                        constant = function(y) {return(1)}
   )
   
   out = list(breakPoints = breakPoints, densityValue = densityValue, parameters = parms)
 }
 
 
-probCaseInHouseSoftmax = function(callNumber, policeData, resData, connection, radius, maxCandidates, decayPenalty){
-  distancesToHomes = getHomesInRadius(callNumber, policeData, resData, connection, radius)
+probCaseInHouseSoftmax = function(callNumber, policeData, resData, connection, radius, table, maxCandidates, decayPenalty){
+  distancesToHomes = getHomesInRadius(callNumber, policeData, resData, connection, radius, table)
   if(is.null(distancesToHomes)) return(NULL)
   maxCandidates = min(maxCandidates, nrow(distancesToHomes))
   setorder(distancesToHomes, distance)
