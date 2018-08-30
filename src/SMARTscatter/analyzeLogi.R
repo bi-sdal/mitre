@@ -4,7 +4,7 @@ library(sf)
 
 source("./src/SMARTscatter/01-prepareAndLoadData.R")
 
-imputationColumns = c("sqrtHINCP", "RMSP", "householdSize", 'singleParent')
+imputationColumns = c("sqrtHINCP", "RMSP", "householdSize", 'singleParent', 'snKid', 'milWoman', 'unmarriedPartner', 'multiGenHouse')
 featurePath = sprintf("./data/mitre/working/imputationAndResamplingResults/%s", paste0(imputationColumns, collapse = '_'))
 
 load(paste0(featurePath, "/logisticRegressions.Rdata"))
