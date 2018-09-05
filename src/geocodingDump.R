@@ -90,7 +90,7 @@ res = sapply(res, levels)
 res[fails] = zips2
 finalZips = as.numeric(unlist(res))
 
-
+write.csv(finalZips, "./data/mitre/working/policeDataZipCodes.csv", row.names = FALSE)
 
 
 
