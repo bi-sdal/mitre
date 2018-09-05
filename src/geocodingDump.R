@@ -91,7 +91,7 @@ res[fails] = zips2
 finalZips = as.numeric(unlist(res))
 
 write.csv(finalZips, "./data/mitre/working/policeDataZipCodes.csv", row.names = FALSE)
-
+finalZips = read.csv("./data/mitre/working/policeDataZipCodes.csv")
 
 
 
