@@ -1,38 +1,4 @@
-# Load police incident data and house locations
-# publicHealthOutcomes = fread('./data/mitre/final/police/dome_replicated.csv')
-# Geocode addresses (just once)
-# geocodes = matrix(NA, ncol = 2, nrow = nrow(publicHealthOutcomes))
-# colnames(geocodes) = c("LATITUDE", "LONGITUDE")
-# for(i in 49:nrow(publicHealthOutcomes)){
-#   geocodes[i,] = geocode_address(publicHealthOutcomes$Location[i])
-#   Sys.sleep(5)
-# }
-# 
-# geocode_address2 = function(address, api_key = sdalr::get_google_maps_key()) {
-#   address <- stringr::str_replace_all(string = address, pattern = '\\s', replacement = '+')
-#   res <- httr::GET(sprintf('https://maps.googleapis.com/maps/api/geocode/json?address=%s&key=%s',
-#                            address,
-#                            api_key))
-#   con <- httr::content(res)
-#   return(con)
-# }
-# 
-# geocodes = list()
-# for(i in 1:nrow(publicHealthOutcomes)){
-#   geocodes[[i]] = geocode_address2(paste0(publicHealthOutcomes$Location[i], ", Arlington, VA"))
-#   Sys.sleep(1)
-# }
-# 
-# outcomesLatLong = lapply(geocodes, function(x){
-#   if(length(x$results) == 0) return(c(NA, NA))
-#   return(c(lat = x$results[[1]]$geometry$location$lat,
-#            lon = x$results[[1]]$geometry$location$lng)
-#   )
-# })
-# 
-# outcomesLatLong = na.omit(data.table(publicHealthOutcomes, do.call(rbind, outcomesLatLong))[,Location := NULL])
-# 
-# fwrite(na.omit(outcomesLatLong), './data/mitre/final/police/dome_geocoded.csv')
+
 
 policeData = fread("./data/mitre/working/PoliceData/policeData.csv")
 outcomesLatLong = fread('./data/mitre/final/police/dome_geocoded.csv')

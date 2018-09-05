@@ -6,7 +6,7 @@ source("./src/SMARTscatter/parameterFiles/allDataFullRuns.R")
 
 resamples = rbindlist(lapply(bgs, function(bg) fread(sprintf("%s/bg_%s/resamples.csv", featurePath, bg))))
 
-assignmentPaths = list.files("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP_householdSize_singleParent_snKid_milWoman_unmarriedPartner_multiGenHouse/", pattern= ".csv")
+assignmentPaths = list.files("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP_householdSize_singleParent_snKid_milWoman_unmarriedPartner_multiGenHouse/", pattern= "Assignments")
 assignments = lapply(assignmentPaths, function(x) fread(paste0(featurePath, "/",x)))
 
 # Logreg for child abuse
