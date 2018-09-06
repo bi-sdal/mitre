@@ -46,12 +46,17 @@ for(kval in 1:length(KVALS)){
              multiGenHouse=mean(multiGenHouse),milWoman=mean(milWoman),
              cases=sum(y),n=n()) %>%
    # compute the raw DOME probability by block group
-   mutate(prob=cases/n) %>%
+   mutate(probCL=cases/n) %>%
    # add the DRUG call rate by block group (computed in geocode_DRUG.r)
    left_join(drugBGrate[,c("BlockGroup","rate")],by=c("blockGroup"="BlockGroup")) %>% 
    rename(DRUGrate = rate) %>%
+   # add the housing unit count from the ACS by block group
+   left_join(housingACSbg[,c("blockGroup","nunit")],by=c("blockGroup"="blockGroup")) %>% 
+   # compute the raw DOME probability by block group
+   mutate(prob=cases/nunit) %>%
    # filter out small block groups and the courthouse block group
-   filter(n > 20,blockGroup != 1017013) -> df2
+   filter(nunit > 20,blockGroup != 1017013) -> df2
+ 
  
  
  
@@ -60,8 +65,8 @@ for(kval in 1:length(KVALS)){
  #plot(df2$medInc,logit(df2$prob),xlim=c(70000,145000),xlab='median income',ylab='logit P(Abuse)')
  #plot(sqrt(df2$medInc),logit(df2$prob),xlim=sqrt(c(70000,145000)))
  
- fit0 <- glm(cbind(cases,n-cases) ~ medInc + RMSP + DRUGrate, data=df2, family=binomial(link='logit'))
- fit1 <- glm(cbind(cases,n-cases) ~ medInc + RMSP + DRUGrate + single_parent + householdSize +
+ fit0 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + DRUGrate, data=df2, family=binomial(link='logit'))
+ fit1 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + DRUGrate + single_parent + householdSize +
                unmarriedPartner + snKid + multiGenHouse + milWoman, 
                data=df2, family=binomial(link='logit'))
   # load up the deviance and aic values

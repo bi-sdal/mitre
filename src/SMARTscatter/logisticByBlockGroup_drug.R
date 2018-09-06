@@ -24,6 +24,9 @@ resamples = rbindlist(
 # also read in the "by block group" DRUG rates
 drugBGrate <- read.csv('./data/mitre/working/PoliceData/drugBGrate.csv',stringsAsFactors = FALSE)
 
+# read in ACS housing counts by block group
+housingACSbg <- read.csv('./data/mitre/working/MiscData/housingACSbg.csv',stringsAsFactors = FALSE)
+
 # variables: special_needs_kid; non_active_duty_woman; unmarried_partner;
 # multigenerational_household;
 # this is 1001 columns: Call_No resample1 ... resample1000
@@ -77,12 +80,16 @@ browser()
              multiGenHouse=mean(multiGenHouse),milWoman=mean(milWoman),
              cases=sum(y),n=n()) %>%
     # compute the raw DOME probability by block group
-   mutate(prob=cases/n) %>%
+   mutate(probCL=cases/n) %>%
     # add the DRUG call rate by block group (computed in geocode_DRUG.r)
    left_join(drugBGrate[,c("BlockGroup","rate")],by=c("blockGroup"="BlockGroup")) %>% 
    rename(DRUGrate = rate) %>%
+    # add the housing unit count from the ACS by block group
+   left_join(housingACSbg[,c("blockGroup","nunit")],by=c("blockGroup"="blockGroup")) %>% 
+    # compute the raw DOME probability by block group
+   mutate(prob=cases/nunit) %>%
     # filter out small block groups and the courthouse block group
-   filter(n > 20,blockGroup != 1017013) -> df2
+   filter(nunit > 20,blockGroup != 1017013) -> df2
  
  
  plot(df2$medInc,df2$prob)
@@ -90,10 +97,11 @@ browser()
  plot(df2$medInc,logit(df2$prob),xlim=c(70000,145000),xlab='median income',ylab='logit P(Abuse)')
  plot(sqrt(df2$medInc),logit(df2$prob),xlim=sqrt(c(70000,145000)))
  
- fit0 <- glm(cbind(cases,n-cases) ~ medInc + RMSP + DRUGrate, data=df2, family=binomial(link='logit'))
- fit1 <- glm(cbind(cases,n-cases) ~ medInc + RMSP + single_parent + householdSize +
-               unmarriedPartner + snKid + multiGenHouse + milWoman + DRUGrate, 
-               data=df2, family=binomial(link='logit'))
+ fit0 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + DRUGrate, data=df2, family=binomial(link='logit'))
+ fit1 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + single_parent + householdSize +
+             #unmarriedPartner + snKid + multiGenHouse + milWoman, 
+             unmarriedPartner + snKid + multiGenHouse + milWoman + DRUGrate, 
+             data=df2, family=binomial(link='logit'))
   # make a plot
  PDF=FALSE
  if(PDF) pdf('lrBlockGroup.pdf',width=9,height=4)
