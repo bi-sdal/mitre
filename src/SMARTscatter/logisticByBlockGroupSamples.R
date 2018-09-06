@@ -24,6 +24,7 @@ library(stringr)
 # grab the covariates realization and the randomly assigned cases
 #KVALS <- sort(sample(1:nreal,nreal,replace=FALSE))
 devOut <- matrix(NA,nrow=4,ncol=length(KVALS))
+coefOut <- matrix(NA,nrow=p+2,ncol=length(KVALS))
 for(kval in 1:length(KVALS)){
   print(kval); k=KVALS[kval]
   #print(c(k,kval))
@@ -36,14 +37,21 @@ for(kval in 1:length(KVALS)){
   # note: many houses have repeat offenses 
   # table(table(synthAC[,1])); for now treat as a 1
  df1 <- data.frame(datHouseBG,XX,y=y1)
-  # summarize by block group
+
+ # summarize by block group
  df1 %>% group_by(blockGroup) %>%
    summarize(medInc = median(sqrtHINCP),single_parent=mean(singleParent),
              RMSP=mean(RMSP),householdSize=mean(householdSize),
              unmarriedPartner=mean(unmarriedPartner),snKid=mean(snKid),
              multiGenHouse=mean(multiGenHouse),milWoman=mean(milWoman),
              cases=sum(y),n=n()) %>%
-   mutate(prob=cases/n) %>% filter(n > 10) -> df2
+   # compute the raw DOME probability by block group
+   mutate(prob=cases/n) %>%
+   # add the DRUG call rate by block group (computed in geocode_DRUG.r)
+   left_join(drugBGrate[,c("BlockGroup","rate")],by=c("blockGroup"="BlockGroup")) %>% 
+   rename(DRUGrate = rate) %>%
+   # filter out small block groups and the courthouse block group
+   filter(n > 20,blockGroup != 1017013) -> df2
  
  
  
@@ -52,15 +60,16 @@ for(kval in 1:length(KVALS)){
  #plot(df2$medInc,logit(df2$prob),xlim=c(70000,145000),xlab='median income',ylab='logit P(Abuse)')
  #plot(sqrt(df2$medInc),logit(df2$prob),xlim=sqrt(c(70000,145000)))
  
- fit0 <- glm(cbind(cases,n-cases) ~ medInc + RMSP, data=df2, family=binomial(link='logit'))
- fit1 <- glm(cbind(cases,n-cases) ~ medInc + RMSP + single_parent + householdSize +
+ fit0 <- glm(cbind(cases,n-cases) ~ medInc + RMSP + DRUGrate, data=df2, family=binomial(link='logit'))
+ fit1 <- glm(cbind(cases,n-cases) ~ medInc + RMSP + DRUGrate + single_parent + householdSize +
                unmarriedPartner + snKid + multiGenHouse + milWoman, 
                data=df2, family=binomial(link='logit'))
   # load up the deviance and aic values
  devOut[,kval] = c(fit0$deviance,fit0$aic,fit1$deviance,fit1$aic)
+ coefOut[,kval] = fit1$coefficients
 }
   # make a plot
- PDF=TRUE
+ PDF=FALSE
  if(PDF) pdf('fits.pdf',width=9,height=4)
    par(mfrow=c(1,2),oma=c(0,0,1.2,0),mar=c(4,4,1.7,1))
    ddev = devOut[1,] - devOut[3,]
@@ -69,5 +78,15 @@ for(kval in 1:length(KVALS)){
    hist(daic,main="aic(baseline) - aic(ss)",xlab="change in AIC")
  if(PDF) dev.off()
    
-   
+ pairs(t(coefOut),pch='.')
   
+   
+# dan's mess here
+if(0){
+   fit1 %>%
+     broom::tidy(conf.int = TRUE) %>%
+     ggplot(aes(exp(estimate), term, color = term)) +
+     geom_point() +
+     geom_errorbarh(aes(xmin=conf.low, xmax=conf.high))
+}
+   

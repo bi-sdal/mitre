@@ -22,7 +22,7 @@ resamples = rbindlist(
 )
 
 # also read in the "by block group" DRUG rates
-drugBGrate <- read.csv('drugBGrate.csv',stringsAsFactors = FALSE)
+drugBGrate <- read.csv('./data/mitre/working/PoliceData/drugBGrate.csv',stringsAsFactors = FALSE)
 
 # variables: special_needs_kid; non_active_duty_woman; unmarried_partner;
 # multigenerational_household;
@@ -53,6 +53,7 @@ assignments %>% select(starts_with("resample")) -> assignments2
 assignments2 <- assignments2[,1:nreal]
 synthAC <- as.matrix(assignments2)
 
+browser()
 ## Now, combine events by block group
 # par(mfrow=c(1,1),mar=c(4,4,1,1),oma=c(0,0,0,0))
 # grab the covariates realization and the randomly assigned cases
@@ -66,6 +67,7 @@ synthAC <- as.matrix(assignments2)
  colnames(XX) <- fnames
   # note: many houses have repeat offenses 
   # table(table(synthAC[,1])); for now treat as a 1
+ rm(df1)
  df1 <- data.frame(datHouseBG,XX,y=y1)
   # summarize by block group
  df1 %>% group_by(blockGroup) %>%
@@ -74,9 +76,13 @@ synthAC <- as.matrix(assignments2)
              unmarriedPartner=mean(unmarriedPartner),snKid=mean(snKid),
              multiGenHouse=mean(multiGenHouse),milWoman=mean(milWoman),
              cases=sum(y),n=n()) %>%
-   mutate(prob=cases/n,drugRate=drugBGrate$rate) %>% 
+    # compute the raw DOME probability by block group
+   mutate(prob=cases/n) %>%
+    # add the DRUG call rate by block group (computed in geocode_DRUG.r)
+   left_join(drugBGrate[,c("BlockGroup","rate")],by=c("blockGroup"="BlockGroup")) %>% 
+   rename(DRUGrate = rate) %>%
     # filter out small block groups and the courthouse block group
-   filter(n > 10,blockGroup != 1017013) -> df2
+   filter(n > 20,blockGroup != 1017013) -> df2
  
  
  plot(df2$medInc,df2$prob)
@@ -84,11 +90,10 @@ synthAC <- as.matrix(assignments2)
  plot(df2$medInc,logit(df2$prob),xlim=c(70000,145000),xlab='median income',ylab='logit P(Abuse)')
  plot(sqrt(df2$medInc),logit(df2$prob),xlim=sqrt(c(70000,145000)))
  
- fit0 <- glm(cbind(cases,n-cases) ~ medInc + RMSP + drugRate, data=df2, family=binomial(link='logit'))
+ fit0 <- glm(cbind(cases,n-cases) ~ medInc + RMSP + DRUGrate, data=df2, family=binomial(link='logit'))
  fit1 <- glm(cbind(cases,n-cases) ~ medInc + RMSP + single_parent + householdSize +
-               unmarriedPartner + snKid + multiGenHouse + milWoman + drugRate, 
+               unmarriedPartner + snKid + multiGenHouse + milWoman + DRUGrate, 
                data=df2, family=binomial(link='logit'))
- browser()
   # make a plot
  PDF=FALSE
  if(PDF) pdf('lrBlockGroup.pdf',width=9,height=4)
@@ -171,13 +176,9 @@ if(PDF) pdf('lrfit0.pdf',width=7,height=6)
     labs(title="Fitted Probability of Domestic Abuse Call", x="", y="")
  if(PDF) dev.off()
 
- 
-browser()
- #------- so far
- # probability of a DOME call for block group in order given by df2
-plot(df2$medInc, fit1$fitted.values)  # looks like the right thing
- 
- 
+
+ # some code to ignore that tries to load zip codes for Arlington County
+if(0){     
   # create covariates from resamples data frame
  resamples[1:10,] %>% select(houseID,blockGroup,one_of(rsampName)) -> tmp
  tmp %>% reshape(idvar="houseID",timevar = rsampName, direction = "wide") -> tmp2
@@ -189,3 +190,4 @@ plot(df2$medInc, fit1$fitted.values)  # looks like the right thing
  
  # seems to have worked....
  arlZipgis <- zctas(starts_with = 222); plot(arlZipgis)
+ }
