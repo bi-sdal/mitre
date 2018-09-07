@@ -61,7 +61,7 @@ Jittered scatter plot of the coefficients from simulation runs
 
 ```{r}
 ggplot(tidy_coefs) +
-  geom_jitter(aes(x = coefficient, y = as.factor(variable)), alpha = .5) +
+  geom_jitter(aes(x = coefficient, y = as.factor(variable)), alpha = .1) +
   ggtitle('Coefficients for the Simulation Runs')
 ```
 
@@ -71,6 +71,28 @@ ggplot(tidy_coefs) +
   facet_wrap(~as.factor(variable)) +
   ggtitle('Distribution of simulated coefficients')
 ```
+
+## Prop g 0
+
+```{r}
+tidy_coefs %>%
+  group_by(variable) %>%
+  summarize(n = n(),
+         num_g_0 = sum(coefficient > 0),
+         pro_g_0 = num_g_0 / n)
+```
+
+## prop l 0
+
+```{r}
+tidy_coefs %>%
+  group_by(variable) %>%
+  summarize(n = n(),
+         num_l_0 = sum(coefficient < 0),
+         pro_l_0 = num_l_0 / n)
+```
+
+
 
 ## "peaky"
 
@@ -106,7 +128,7 @@ ggplot(dplyr::filter(tidy_coefs, variable == 'RMSP')) +
 
 ```{r}
 g <- ggplot(tidy_coefs) +
-  geom_jitter(aes(x = or, y = as.factor(variable)), alpha = .5)
+  geom_jitter(aes(x = or, y = as.factor(variable)), alpha = .1)
 
 g +  ggtitle('ORs for the Simulation Runs')
 ```
@@ -191,7 +213,7 @@ ggplot(arlFit) +
                alpha = 1,
                color = "grey70",
                lwd = .5) +
-  scale_fill_viridis_c(limits = c(0, max_diff)) +
+  scale_fill_viridis_c() +
   coord_quickmap() + #coord_equal(ratio=1) +
   theme_minimal() +
   theme(axis.ticks.y = element_blank(),
@@ -213,6 +235,13 @@ GEOIDs of the "highest" differences
 ```{r}
 arlFit %>%
   dplyr::filter(fitted.values - fitted.values0 > .002) %>%
+  dplyr::select(GEOID) %>%
+  base::unique()
+```
+
+```{r}
+arlFit %>%
+  dplyr::filter(fitted.values - fitted.values0 < -.002) %>%
   dplyr::select(GEOID) %>%
   base::unique()
 ```
