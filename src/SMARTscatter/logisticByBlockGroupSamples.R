@@ -22,7 +22,7 @@ library(stringr)
 
 
 # grab the covariates realization and the randomly assigned cases
-#KVALS <- sort(sample(1:nreal,nreal,replace=FALSE))
+KVALS <- sort(sample(1:nreal,nreal,replace=FALSE))
 devOut <- matrix(NA,nrow=4,ncol=length(KVALS))
 coefOut <- matrix(NA,nrow=p+2,ncol=length(KVALS))
 for(kval in 1:length(KVALS)){
