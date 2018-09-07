@@ -56,7 +56,7 @@ assignments %>% select(starts_with("resample")) -> assignments2
 assignments2 <- assignments2[,1:nreal]
 synthAC <- as.matrix(assignments2)
 
-browser()
+# browser()
 ## Now, combine events by block group
 # par(mfrow=c(1,1),mar=c(4,4,1,1),oma=c(0,0,0,0))
 # grab the covariates realization and the randomly assigned cases
