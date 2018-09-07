@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       )
 
 # disable scientific notation
-options(scipen=999)
+options(scipen = 999)
 ```
 
 ```{r}
@@ -76,28 +76,28 @@ ggplot(tidy_coefs) +
 
 ```{r}
 ggplot(dplyr::filter(tidy_coefs, variable == 'DRUGrate')) +
-  ggplot2::geom_histogram(aes(x = coefficient)) +
+  geom_histogram(aes(x = coefficient)) +
   ggtitle('Distribution of DRUGrate')
 ```
 
 
 ```{r}
 ggplot(dplyr::filter(tidy_coefs, variable == 'householdSize')) +
-  ggplot2::geom_histogram(aes(x = coefficient)) +
+  geom_histogram(aes(x = coefficient)) +
   ggtitle('Distribution of householdSize')
 ```
 
 
 ```{r}
 ggplot(dplyr::filter(tidy_coefs, variable == 'medInc')) +
-  ggplot2::geom_histogram(aes(x = coefficient)) +
+  geom_histogram(aes(x = coefficient)) +
   ggtitle('Distribution of medInc')
 ```
 
 
 ```{r}
 ggplot(dplyr::filter(tidy_coefs, variable == 'RMSP')) +
-  ggplot2::geom_histogram(aes(x = coefficient)) +
+  geom_histogram(aes(x = coefficient)) +
   ggtitle('Distribution of RMSP')
 ```
 
