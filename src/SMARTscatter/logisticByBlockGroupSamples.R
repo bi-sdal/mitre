@@ -94,4 +94,11 @@ if(0){
      geom_point() +
      geom_errorbarh(aes(xmin=conf.low, xmax=conf.high))
 }
-   
+
+saveRDS(devOut, file = './data/mitre/final/logistic_regressions/deviance.RDS')
+saveRDS(coefOut, file = './data/mitre/final/logistic_regressions/coefficients.RDS')
+
+saveRDS(df, file = './data/mitre/working/logistic_regressions/example_df.RDS')
+saveRDS(df2, file = './data/mitre/working/logistic_regressions/example_df2.RDS')
+saveRDS(fit0, file = './data/mitre/working/logistic_regressions/example_fit0.RDS')
+saveRDS(fit1, file = './data/mitre/working/logistic_regressions/example_fit1.RDS')
