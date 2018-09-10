@@ -22,9 +22,13 @@ library(stringr)
 
 
 # grab the covariates realization and the randomly assigned cases
-#KVALS <- sort(sample(1:nreal,nreal,replace=FALSE))
+KVALS <- sort(sample(1:nreal,nreal,replace=FALSE))
 devOut <- matrix(NA,nrow=4,ncol=length(KVALS))
 coefOut <- matrix(NA,nrow=p+2,ncol=length(KVALS))
+
+fit_notSmart <- list()
+fit_smart <- list()
+
 for(kval in 1:length(KVALS)){
   print(kval); k=KVALS[kval]
   #print(c(k,kval))
@@ -69,10 +73,18 @@ for(kval in 1:length(KVALS)){
  fit1 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + DRUGrate + single_parent + householdSize +
                unmarriedPartner + snKid + multiGenHouse + milWoman, 
                data=df2, family=binomial(link='logit'))
+ 
+ fit_notSmart[kval] <- fit0
+ fit_smart[kval] <- fit1
+ 
   # load up the deviance and aic values
  devOut[,kval] = c(fit0$deviance,fit0$aic,fit1$deviance,fit1$aic)
  coefOut[,kval] = fit1$coefficients
 }
+
+stopifnot(length(fit_notSmart) == length(fit_smart))
+stopifnot(length(fit_smart) == length(KVALS))
+
   # make a plot
  PDF=FALSE
  if(PDF) pdf('fits.pdf',width=9,height=4)
@@ -94,4 +106,14 @@ if(0){
      geom_point() +
      geom_errorbarh(aes(xmin=conf.low, xmax=conf.high))
 }
-   
+
+saveRDS(devOut, file = './data/mitre/final/logistic_regressions/deviance.RDS')
+saveRDS(coefOut, file = './data/mitre/final/logistic_regressions/coefficients.RDS')
+
+saveRDS(fit_notSmart, file = './data/mitre/final/logistic_regressions/fit_notSmart.RDS')
+saveRDS(fit_smart, file = './data/mitre/final/logistic_regressions/fit_smart.RDS')
+
+saveRDS(df, file = './data/mitre/working/logistic_regressions/example_df.RDS')
+saveRDS(df2, file = './data/mitre/working/logistic_regressions/example_df2.RDS')
+saveRDS(fit0, file = './data/mitre/working/logistic_regressions/example_fit0.RDS')
+saveRDS(fit1, file = './data/mitre/working/logistic_regressions/example_fit1.RDS')
