@@ -33,7 +33,8 @@ pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", t
 
 for(kval in 1:length(KVALS)){
   pb$tick(1)
-  #print(kval); k=KVALS[kval]
+  #print(kval); 
+  k=KVALS[kval]
   #print(c(k,kval))
  rsampName = paste('resample',k,sep="")
  y1 <- rep(0,N); y1[synthAC[,k]] <- 1
