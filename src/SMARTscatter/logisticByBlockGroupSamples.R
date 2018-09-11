@@ -29,8 +29,11 @@ coefOut <- matrix(NA,nrow=p+2,ncol=length(KVALS))
 fit_notSmart <- list()
 fit_smart <- list()
 
+pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = length(KVALS))
+
 for(kval in 1:length(KVALS)){
-  print(kval); k=KVALS[kval]
+  pb$tick(1)
+  #print(kval); k=KVALS[kval]
   #print(c(k,kval))
  rsampName = paste('resample',k,sep="")
  y1 <- rep(0,N); y1[synthAC[,k]] <- 1
