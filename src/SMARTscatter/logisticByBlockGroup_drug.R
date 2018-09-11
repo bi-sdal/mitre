@@ -184,6 +184,7 @@ ggplot(arlFit) +
   labs(title="Fitted Probability of Domestic Abuse Call", x="", y="")
 if(PDF) dev.off()
 
+saveRDS(arlFit, file = './data/mitre/final/smart_maps/fitted_prob_data.RDS')
 
 # some code to ignore that tries to load zip codes for Arlington County
 if(0){     
