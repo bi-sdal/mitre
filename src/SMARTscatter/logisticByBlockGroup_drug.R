@@ -56,7 +56,6 @@ assignments %>% select(starts_with("resample")) -> assignments2
 assignments2 <- assignments2[,1:nreal]
 synthAC <- as.matrix(assignments2)
 
-# browser()
 ## Now, combine events by block group
 # par(mfrow=c(1,1),mar=c(4,4,1,1),oma=c(0,0,0,0))
 # grab the covariates realization and the randomly assigned cases
@@ -85,8 +84,14 @@ df1 %>% group_by(blockGroup) %>%
   left_join(drugBGrate[,c("BlockGroup","rate")],by=c("blockGroup"="BlockGroup")) %>% 
   rename(DRUGrate = rate) %>%
   # add the housing unit count from the ACS by block group
-  left_join(housingACSbg[,c("blockGroup","nunit")],by=c("blockGroup"="blockGroup")) %>% 
-  # compute the raw DOME probability by block group
+  left_join(housingACSbg[,c("blockGroup","nunit")],by=c("blockGroup"="blockGroup")) %>%
+  # modify the mean of the binary variables in df1
+  mutate(single_parent=single_parent*n/nunit,
+         unmarriedPartner=unmarriedPartner*n/nunit,
+         snKid=snKid*n/nunit,multiGenHouse=multiGenHouse*n/nunit,
+         milWoman=milWoman*n/nunit,
+         DRUGrate=DRUGrate*n/nunit) %>%
+  # compute the raw DOME probability by block group using ACS tabulated housing unit counts
   mutate(prob=cases/nunit) %>%
   # filter out small block groups and the courthouse block group
   filter(nunit > 20,blockGroup != 1017013) -> df2
@@ -106,10 +111,10 @@ fit1 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + single_parent + household
 PDF=FALSE
 if(PDF) pdf('lrBlockGroup.pdf',width=9,height=4)
 par(mfrow=c(1,2),oma=c(0,0,1.2,0),mar=c(4,4,1.7,1))
-plot(df2$medInc,logit(df2$prob),xlim=c(70000,145000),xlab='median income',ylab='logit P(Abuse)')
+plot(df2$medInc,logit(df2$prob),xlim=c(70000,145000),xlab='median income',ylab='logit P(DOME)')
 points(df2$medInc,logit(fit1$fitted.values),pch=16,cex=.7,col='green')
 mtext('logit scale',side=3,line=.2,outer=F)
-plot(df2$medInc,(df2$prob),xlim=c(70000,145000),xlab='median income',ylab='P(Abuse)')
+plot(df2$medInc,(df2$prob),xlim=c(70000,145000),xlab='median income',ylab='P(DOME)')
 mtext('probability scale',side=3,line=.2,outer=F)
 points(df2$medInc,(fit1$fitted.values),pch=16,cex=.7,col='green')
 mtext('domestic violence call rate by median income for blockgroup',side=3,line=.1,outer=T)

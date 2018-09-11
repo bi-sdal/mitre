@@ -56,7 +56,13 @@ for(kval in 1:length(KVALS)){
    rename(DRUGrate = rate) %>%
    # add the housing unit count from the ACS by block group
    left_join(housingACSbg[,c("blockGroup","nunit")],by=c("blockGroup"="blockGroup")) %>% 
-   # compute the raw DOME probability by block group
+    # modify the mean of the binary variables in df1
+    mutate(single_parent=single_parent*n/nunit,
+           unmarriedPartner=unmarriedPartner*n/nunit,
+           snKid=snKid*n/nunit,multiGenHouse=multiGenHouse*n/nunit,
+           milWoman=milWoman*n/nunit,
+           DRUGrate=DRUGrate*n/nunit) %>%
+    # compute the raw DOME probability by block group
    mutate(prob=cases/nunit) %>%
    # filter out small block groups and the courthouse block group
    filter(nunit > 20,blockGroup != 1017013) -> df2
