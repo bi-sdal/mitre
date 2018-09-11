@@ -6,7 +6,7 @@ library(stringr)
 
 ## Get blockgroup list from file
 
-bgs = list.files("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP_householdSize_singleParent_snKid_milWoman_unmarriedPartner_multiGenHouse//") %>%
+bgs = list.files("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP_householdSize_singleParent_snKid_militaryService_unmarriedPartner_multiGenHouse/") %>%
   str_extract("\\d{7}") %>%
   na.omit %>%
   as.numeric
@@ -15,7 +15,7 @@ bgs = list.files("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_
 # houseID feature resample1 .... resample100 blockgroup
 resamples = rbindlist(
   lapply(bgs, function(bg) {
-    out = fread(sprintf("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP_householdSize_singleParent_snKid_milWoman_unmarriedPartner_multiGenHouse/bg_%s/resamples.csv", bg))
+    out = fread(sprintf("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP_householdSize_singleParent_snKid_militaryService_unmarriedPartner_multiGenHouse/bg_%s/resamples.csv", bg))
     out = data.table(out, blockGroup = bg)
     return(out)
   })
@@ -76,7 +76,9 @@ df1 %>% group_by(blockGroup) %>%
   summarize(medInc = median(sqrtHINCP),single_parent=mean(singleParent),
             RMSP=mean(RMSP),householdSize=mean(householdSize),
             unmarriedPartner=mean(unmarriedPartner),snKid=mean(snKid),
-            multiGenHouse=mean(multiGenHouse),milWoman=mean(milWoman),
+            multiGenHouse=mean(multiGenHouse),
+            #milWoman=mean(milWoman),
+            militaryService=mean(militaryService),
             cases=sum(y),n=n()) %>%
   # compute the raw DOME probability by block group
   mutate(probCL=cases/n) %>%
@@ -89,7 +91,8 @@ df1 %>% group_by(blockGroup) %>%
   mutate(single_parent=single_parent*n/nunit,
          unmarriedPartner=unmarriedPartner*n/nunit,
          snKid=snKid*n/nunit,multiGenHouse=multiGenHouse*n/nunit,
-         milWoman=milWoman*n/nunit,
+         #milWoman=milWoman*n/nunit,
+         militaryService=militaryService*n/nunit,
          DRUGrate=DRUGrate*n/nunit) %>%
   # compute the raw DOME probability by block group using ACS tabulated housing unit counts
   mutate(prob=cases/nunit) %>%
@@ -105,7 +108,8 @@ plot(sqrt(df2$medInc),logit(df2$prob),xlim=sqrt(c(70000,145000)))
 fit0 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + DRUGrate, data=df2, family=binomial(link='logit'))
 fit1 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + single_parent + householdSize +
               #unmarriedPartner + snKid + multiGenHouse + milWoman, 
-              unmarriedPartner + snKid + multiGenHouse + milWoman + DRUGrate, 
+              #unmarriedPartner + snKid + multiGenHouse + milWoman + DRUGrate, 
+              unmarriedPartner + snKid + multiGenHouse + militaryService + DRUGrate, 
             data=df2, family=binomial(link='logit'))
 # make a plot
 PDF=FALSE

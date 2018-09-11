@@ -47,7 +47,9 @@ for(kval in 1:length(KVALS)){
    summarize(medInc = median(sqrtHINCP),single_parent=mean(singleParent),
              RMSP=mean(RMSP),householdSize=mean(householdSize),
              unmarriedPartner=mean(unmarriedPartner),snKid=mean(snKid),
-             multiGenHouse=mean(multiGenHouse),milWoman=mean(milWoman),
+             multiGenHouse=mean(multiGenHouse),
+             #milWoman=mean(milWoman),
+             militaryService=mean(militaryService),
              cases=sum(y),n=n()) %>%
    # compute the raw DOME probability by block group
    mutate(probCL=cases/n) %>%
@@ -60,7 +62,8 @@ for(kval in 1:length(KVALS)){
     mutate(single_parent=single_parent*n/nunit,
            unmarriedPartner=unmarriedPartner*n/nunit,
            snKid=snKid*n/nunit,multiGenHouse=multiGenHouse*n/nunit,
-           milWoman=milWoman*n/nunit,
+           #milWoman=milWoman*n/nunit,
+           militaryService=militaryService*n/nunit,
            DRUGrate=DRUGrate*n/nunit) %>%
     # compute the raw DOME probability by block group
    mutate(prob=cases/nunit) %>%
@@ -77,7 +80,7 @@ for(kval in 1:length(KVALS)){
  
  fit0 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + DRUGrate, data=df2, family=binomial(link='logit'))
  fit1 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + DRUGrate + single_parent + householdSize +
-               unmarriedPartner + snKid + multiGenHouse + milWoman, 
+               unmarriedPartner + snKid + multiGenHouse + militaryService, #milWoman, 
                data=df2, family=binomial(link='logit'))
  
  fit_notSmart[kval] <- fit0
