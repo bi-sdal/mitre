@@ -83,8 +83,8 @@ for(kval in 1:length(KVALS)){
                unmarriedPartner + snKid + multiGenHouse + militaryService, #milWoman, 
                data=df2, family=binomial(link='logit'))
  
- fit_notSmart[kval] <- fit0
- fit_smart[kval] <- fit1
+ fit_notSmart <- append(fit_notSmart, list(fit0))
+ fit_smart <- append(fit_smart, list(fit1))
  
   # load up the deviance and aic values
  devOut[,kval] = c(fit0$deviance,fit0$aic,fit1$deviance,fit1$aic)
