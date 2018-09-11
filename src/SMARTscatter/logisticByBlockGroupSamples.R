@@ -116,7 +116,8 @@ if(0){
      broom::tidy(conf.int = TRUE) %>%
      ggplot(aes(exp(estimate), term, color = term)) +
      geom_point() +
-     geom_errorbarh(aes(xmin=conf.low, xmax=conf.high))
+     geom_errorbarh(aes(xmin = exp(conf.low), xmax = exp(conf.high))) +
+     xlim(0, 10)
 }
 
 saveRDS(devOut, file = './data/mitre/final/logistic_regressions/deviance.RDS')
