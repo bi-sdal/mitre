@@ -21,6 +21,17 @@ library(stringr)
 
 
 
+# read data from logisticByBlockGroup_drug.R
+nreal <- readRDS('./data/mitre/working/smart_analysis/nreal.RDS')
+p <- readRDS('./data/mitre/working/smart_analysis/p.RDS')
+N <- readRDS('./data/mitre/working/smart_analysis/N.RDS')
+synthAC <- readRDS('./data/mitre/working/smart_analysis/synthAC.RDS')
+resamples <- readRDS('./data/mitre/working/smart_analysis/resamples.RDS')
+synthHH <- readRDS('./data/mitre/working/smart_analysis/synthHH.RDS')
+datHouseBG <- readRDS('./data/mitre/working/smart_analysis/datHouseBG.RDS')
+drugBGrate <- readRDS('./data/mitre/working/smart_analysis/drugBGrate.RDS')
+housingACSbg <- readRDS('./data/mitre/working/smart_analysis/housingACSbg.RDS')
+
 # grab the covariates realization and the randomly assigned cases
 KVALS <- sort(sample(1:nreal,nreal,replace=FALSE))
 devOut <- matrix(NA,nrow=4,ncol=length(KVALS))
@@ -121,13 +132,17 @@ if(0){
      xlim(0, 10)
 }
 
+# final data sets
 saveRDS(devOut, file = './data/mitre/final/logistic_regressions/deviance.RDS')
 saveRDS(coefOut, file = './data/mitre/final/logistic_regressions/coefficients.RDS')
 
 saveRDS(fit_notSmart, file = './data/mitre/final/logistic_regressions/fit_notSmart.RDS')
 saveRDS(fit_smart, file = './data/mitre/final/logistic_regressions/fit_smart.RDS')
 
+# temp datasets (only a single realization)
 saveRDS(df, file = './data/mitre/working/logistic_regressions/example_df.RDS')
 saveRDS(df2, file = './data/mitre/working/logistic_regressions/example_df2.RDS')
 saveRDS(fit0, file = './data/mitre/working/logistic_regressions/example_fit0.RDS')
 saveRDS(fit1, file = './data/mitre/working/logistic_regressions/example_fit1.RDS')
+
+print("DONE. logisticByBlockGroupSamples.R")

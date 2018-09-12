@@ -150,7 +150,7 @@ df2$fitted.values <- fit1$fitted.values
 df2$fitted.values0 <- fit0$fitted.values
 # check: do these blockgroup id's match to the GIS id's
 sum(is.na(match(df2$blockGroup2,arlBGgis.df$GEOID)))
-table(match(xx,arlBGgis.df$GEOID))
+table(match(XX,arlBGgis.df$GEOID))
 arlFit <- left_join(arlBGgis.df,df2,by=c("GEOID"="blockGroup2"))
 # make a plot on the map
 if(PDF) pdf('lr1fit.pdf',width=7,height=6)
@@ -193,8 +193,6 @@ ggplot(arlFit) +
   labs(title="Fitted Probability of Domestic Abuse Call", x="", y="")
 if(PDF) dev.off()
 
-saveRDS(arlFit, file = './data/mitre/final/smart_maps/fitted_prob_data.RDS')
-
 # some code to ignore that tries to load zip codes for Arlington County
 if(0){     
   # create covariates from resamples data frame
@@ -209,3 +207,20 @@ if(0){
   # seems to have worked....
   arlZipgis <- zctas(starts_with = 222); plot(arlZipgis)
 }
+
+print('save out things for logisticByBlockGroupSamples.R')
+saveRDS(resamples, './data/mitre/working/smart_analysis/resamples.RDS')
+saveRDS(nreal, './data/mitre/working/smart_analysis/nreal.RDS')
+saveRDS(N, './data/mitre/working/smart_analysis/N.RDS')
+saveRDS(p, './data/mitre/working/smart_analysis/p.RDS')
+saveRDS(synthAC, './data/mitre/working/smart_analysis/synthAC.RDS')
+saveRDS(synthHH, './data/mitre/working/smart_analysis/synthHH.RDS')
+saveRDS(datHouseBG, './data/mitre/working/smart_analysis/datHouseBG.RDS')
+saveRDS(drugBGrate, 'data/mitre/working/smart_analysis/drugBGrate.RDS')
+saveRDS(housingACSbg, './data/mitre/working/smart_analysis/housingACSbg.RDS')
+
+
+print('save out things for analysis plots')
+saveRDS(arlFit, './data/mitre/final/smart_maps/fitted_prob_data.RDS')
+
+print("DONE. logisticByBlockGroup_drug.R")
