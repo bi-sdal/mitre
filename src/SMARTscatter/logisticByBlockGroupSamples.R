@@ -21,12 +21,31 @@ library(stringr)
 
 
 
+# read data from logisticByBlockGroup_drug.R
+nreal <- readRDS('./data/mitre/working/smart_analysis/nreal.RDS')
+p <- readRDS('./data/mitre/working/smart_analysis/p.RDS')
+N <- readRDS('./data/mitre/working/smart_analysis/N.RDS')
+synthAC <- readRDS('./data/mitre/working/smart_analysis/synthAC.RDS')
+resamples <- readRDS('./data/mitre/working/smart_analysis/resamples.RDS')
+synthHH <- readRDS('./data/mitre/working/smart_analysis/synthHH.RDS')
+datHouseBG <- readRDS('./data/mitre/working/smart_analysis/datHouseBG.RDS')
+drugBGrate <- readRDS('./data/mitre/working/smart_analysis/drugBGrate.RDS')
+housingACSbg <- readRDS('./data/mitre/working/smart_analysis/housingACSbg.RDS')
+
 # grab the covariates realization and the randomly assigned cases
-#KVALS <- sort(sample(1:nreal,nreal,replace=FALSE))
+KVALS <- sort(sample(1:nreal,nreal,replace=FALSE))
 devOut <- matrix(NA,nrow=4,ncol=length(KVALS))
 coefOut <- matrix(NA,nrow=p+2,ncol=length(KVALS))
+
+fit_notSmart <- list()
+fit_smart <- list()
+
+pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = length(KVALS))
+
 for(kval in 1:length(KVALS)){
-  print(kval); k=KVALS[kval]
+  pb$tick(1)
+  #print(kval); 
+ k=KVALS[kval]
   #print(c(k,kval))
  rsampName = paste('resample',k,sep="")
  y1 <- rep(0,N); y1[synthAC[,k]] <- 1
@@ -43,7 +62,9 @@ for(kval in 1:length(KVALS)){
    summarize(medInc = median(sqrtHINCP),single_parent=mean(singleParent),
              RMSP=mean(RMSP),householdSize=mean(householdSize),
              unmarriedPartner=mean(unmarriedPartner),snKid=mean(snKid),
-             multiGenHouse=mean(multiGenHouse),milWoman=mean(milWoman),
+             multiGenHouse=mean(multiGenHouse),
+             #milWoman=mean(milWoman),
+             militaryService=mean(militaryService),
              cases=sum(y),n=n()) %>%
    # compute the raw DOME probability by block group
    mutate(probCL=cases/n) %>%
@@ -52,7 +73,14 @@ for(kval in 1:length(KVALS)){
    rename(DRUGrate = rate) %>%
    # add the housing unit count from the ACS by block group
    left_join(housingACSbg[,c("blockGroup","nunit")],by=c("blockGroup"="blockGroup")) %>% 
-   # compute the raw DOME probability by block group
+    # modify the mean of the binary variables in df1
+    mutate(single_parent=single_parent*n/nunit,
+           unmarriedPartner=unmarriedPartner*n/nunit,
+           snKid=snKid*n/nunit,multiGenHouse=multiGenHouse*n/nunit,
+           #milWoman=milWoman*n/nunit,
+           militaryService=militaryService*n/nunit,
+           DRUGrate=DRUGrate*n/nunit) %>%
+    # compute the raw DOME probability by block group
    mutate(prob=cases/nunit) %>%
    # filter out small block groups and the courthouse block group
    filter(nunit > 20,blockGroup != 1017013) -> df2
@@ -67,12 +95,20 @@ for(kval in 1:length(KVALS)){
  
  fit0 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + DRUGrate, data=df2, family=binomial(link='logit'))
  fit1 <- glm(cbind(cases,nunit-cases) ~ medInc + RMSP + DRUGrate + single_parent + householdSize +
-               unmarriedPartner + snKid + multiGenHouse + milWoman, 
+               unmarriedPartner + snKid + multiGenHouse + militaryService, #milWoman, 
                data=df2, family=binomial(link='logit'))
+ 
+ fit_notSmart <- append(fit_notSmart, list(fit0))
+ fit_smart <- append(fit_smart, list(fit1))
+ 
   # load up the deviance and aic values
  devOut[,kval] = c(fit0$deviance,fit0$aic,fit1$deviance,fit1$aic)
  coefOut[,kval] = fit1$coefficients
 }
+
+stopifnot(length(fit_notSmart) == length(fit_smart))
+stopifnot(length(fit_smart) == length(KVALS))
+
   # make a plot
  PDF=FALSE
  if(PDF) pdf('fits.pdf',width=9,height=4)
@@ -92,6 +128,21 @@ if(0){
      broom::tidy(conf.int = TRUE) %>%
      ggplot(aes(exp(estimate), term, color = term)) +
      geom_point() +
-     geom_errorbarh(aes(xmin=conf.low, xmax=conf.high))
+     geom_errorbarh(aes(xmin = exp(conf.low), xmax = exp(conf.high))) +
+     xlim(0, 10)
 }
-   
+
+# final data sets
+saveRDS(devOut, file = './data/mitre/final/logistic_regressions/deviance.RDS')
+saveRDS(coefOut, file = './data/mitre/final/logistic_regressions/coefficients.RDS')
+
+saveRDS(fit_notSmart, file = './data/mitre/final/logistic_regressions/fit_notSmart.RDS')
+saveRDS(fit_smart, file = './data/mitre/final/logistic_regressions/fit_smart.RDS')
+
+# temp datasets (only a single realization)
+saveRDS(df, file = './data/mitre/working/logistic_regressions/example_df.RDS')
+saveRDS(df2, file = './data/mitre/working/logistic_regressions/example_df2.RDS')
+saveRDS(fit0, file = './data/mitre/working/logistic_regressions/example_fit0.RDS')
+saveRDS(fit1, file = './data/mitre/working/logistic_regressions/example_fit1.RDS')
+
+print("DONE. logisticByBlockGroupSamples.R")

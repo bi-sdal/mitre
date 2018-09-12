@@ -32,6 +32,7 @@ library(broom)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(data.table)
 
 ggplot2::theme_set(theme_bw())
 ```
@@ -49,7 +50,7 @@ smart_coefficients$sim_num <- 1:nrow(smart_coefficients)
 tidy_coefs <- smart_coefficients %>%
   tidyr::gather(key = 'variable',
          value = 'coefficient',
-         `(Intercept)`:milWoman) %>%
+         `(Intercept)`:militaryService) %>%
   dplyr::mutate(or = exp(coefficient))
 ```
 
@@ -92,8 +93,6 @@ tidy_coefs %>%
          pro_l_0 = num_l_0 / n)
 ```
 
-
-
 ## "peaky"
 
 ```{r}
@@ -129,7 +128,6 @@ ggplot(dplyr::filter(tidy_coefs, variable == 'RMSP')) +
 ```{r}
 g <- ggplot(tidy_coefs) +
   geom_jitter(aes(x = or, y = as.factor(variable)), alpha = .1)
-
 g +  ggtitle('ORs for the Simulation Runs')
 ```
 
@@ -246,3 +244,25 @@ arlFit %>%
   base::unique()
 ```
 
+# Fitted vs Feature Plots
+
+```{r}
+feature = 'medInc'
+featureFitPlotData = data.table(getElement(fit1$data, feature), fit1$fitted.values)
+colnames(featureFitPlotData) = c(feature, "Pr(DOME)")
+ggplot(data = featureFitPlotData) + 
+  geom_point(aes(x = get(feature), y = `Pr(DOME)`)) + 
+  labs(x = feature)
+
+```
+
+```{r}
+for(i in names(fit1$coefficients)[-1]){
+  feature = i
+  featureFitPlotData = data.table(getElement(fit1$data, feature), fit1$fitted.values)
+  colnames(featureFitPlotData) = c(feature, "Pr(DOME)")
+  p = ggplot(data = featureFitPlotData) + 
+    geom_point(aes(x = get(feature), y = `Pr(DOME)`)) + 
+    labs(x = feature)
+  plot(p)
+}
