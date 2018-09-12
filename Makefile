@@ -12,7 +12,7 @@ smart_analysis_data:
 ## smart_analysis            : plots and figures from smart scatter
 .PHONY : smart_analysis
 smart_analysis:
-	Rscript -e 'rmarkdown::render()'
+	Rscript -e "rmarkdown::render('./src/smart_analysis/smart_analysis.Rmd', output_dir = 'output/smart_analysis/')"
 
 #
 # q1 plot ---------------------------------------------------------------------
