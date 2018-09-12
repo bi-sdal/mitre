@@ -1,0 +1,269 @@
+---
+title: "Smart Analysis"
+author: "Daniel Chen"
+date: "9/7/2018"
+output: 
+  html_document: 
+    number_sections: yes
+    toc: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(here)
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.width = 8, fig.height = 5 # golden ratio
+                      )
+
+# disable scientific notation
+options(scipen = 999)
+```
+
+```{r}
+smart_coefficients <- readRDS(here('data/mitre/final/logistic_regressions/coefficients.RDS'))
+smart_deviances <- readRDS(here('data/mitre/final/logistic_regressions/deviance.RDS'))
+fit0 <- readRDS(here('./data/mitre/working/logistic_regressions/example_fit0.RDS'))
+fit1 <- readRDS(here('./data/mitre/working/logistic_regressions/example_fit1.RDS'))
+```
+
+```{r}
+library(broom)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(data.table)
+
+ggplot2::theme_set(theme_bw())
+```
+
+```{r}
+# get order of coefficient names
+coef_names <- tidy(fit1)$term
+smart_coefficients <- tibble::as_tibble(t(smart_coefficients))
+names(smart_coefficients) <- coef_names
+```
+
+```{r}
+smart_coefficients$sim_num <- 1:nrow(smart_coefficients)
+
+tidy_coefs <- smart_coefficients %>%
+  tidyr::gather(key = 'variable',
+         value = 'coefficient',
+         `(Intercept)`:militaryService) %>%
+  dplyr::mutate(or = exp(coefficient))
+```
+
+# Logistic Regression
+
+## Coefficients
+
+Jittered scatter plot of the coefficients from simulation runs
+
+```{r}
+ggplot(tidy_coefs) +
+  geom_jitter(aes(x = coefficient, y = as.factor(variable)), alpha = .1) +
+  ggtitle('Coefficients for the Simulation Runs')
+```
+
+```{r}
+ggplot(tidy_coefs) +
+  geom_histogram(aes(x = coefficient)) +
+  facet_wrap(~as.factor(variable)) +
+  ggtitle('Distribution of simulated coefficients')
+```
+
+## Prop g 0
+
+```{r}
+tidy_coefs %>%
+  group_by(variable) %>%
+  summarize(n = n(),
+         num_g_0 = sum(coefficient > 0),
+         pro_g_0 = num_g_0 / n)
+```
+
+## prop l 0
+
+```{r}
+tidy_coefs %>%
+  group_by(variable) %>%
+  summarize(n = n(),
+         num_l_0 = sum(coefficient < 0),
+         pro_l_0 = num_l_0 / n)
+```
+
+
+## "peaky"
+
+```{r}
+ggplot(dplyr::filter(tidy_coefs, variable == 'DRUGrate')) +
+  geom_histogram(aes(x = coefficient)) +
+  ggtitle('Distribution of DRUGrate')
+```
+
+
+```{r}
+ggplot(dplyr::filter(tidy_coefs, variable == 'householdSize')) +
+  geom_histogram(aes(x = coefficient)) +
+  ggtitle('Distribution of householdSize')
+```
+
+
+```{r}
+ggplot(dplyr::filter(tidy_coefs, variable == 'medInc')) +
+  geom_histogram(aes(x = coefficient)) +
+  ggtitle('Distribution of medInc')
+```
+
+
+```{r}
+ggplot(dplyr::filter(tidy_coefs, variable == 'RMSP')) +
+  geom_histogram(aes(x = coefficient)) +
+  ggtitle('Distribution of RMSP')
+```
+
+
+## Odds Ratios
+
+```{r}
+g <- ggplot(tidy_coefs) +
+  geom_jitter(aes(x = or, y = as.factor(variable)), alpha = .1)
+g +  ggtitle('ORs for the Simulation Runs')
+```
+
+```{r}
+g +
+  xlim(0, 5)  +
+  ggtitle('Truncated ORs')
+```
+
+Disribution of ORs
+
+```{r}
+ggplot(tidy_coefs) +
+  geom_histogram(aes(x = or)) +
+  facet_wrap(~variable) +
+  ggtitle('Distrubution of ORs')
+```
+
+
+
+```{r}
+ggplot(dplyr::filter(tidy_coefs, or < 5)) +
+  geom_histogram(aes(x = or), bins = 50) +
+  facet_wrap(~variable) +
+  ggtitle('Truncated Distrubutions')
+```
+
+# Maps
+
+```{r}
+arlFit <- readRDS(here('./data/mitre/final/smart_maps/fitted_prob_data.RDS'))
+```
+
+```{r}
+ggplot(arlFit) + 
+  geom_polygon(aes(x=long,y=lat,group=group,fill=fitted.values),
+               #geom_polygon(aes(x=long,y=lat,group=group,fill=prob),
+               alpha=1,color="grey70",lwd=.5) +
+  scale_fill_gradientn(colors=c('lightblue','red','yellow'),
+                       values = scales::rescale(c(0, .09, .18, 0.25, 0.4)),
+                       #labels=percent,name=expression("Pr(DOME)"),
+                       limits=c(0,max(fit0$fitted,fit1$fitted))) +
+  coord_quickmap() + #coord_equal(ratio=1) +
+  theme_minimal() +
+  theme(axis.ticks.y = element_blank(),axis.text.y = element_blank(), # get rid of x ticks/text
+        axis.ticks.x = element_blank(),axis.text.x = element_blank(), # get rid of y ticks/text
+        plot.title = element_text(lineheight=.8, face="bold", vjust=1, hjust = .5),
+        plot.caption = element_text(hjust=0)) + #labels
+  labs(title="Fitted Probability of Domestic Abuse Call", x="", y="")
+```
+
+```{r}
+ggplot(arlFit) + 
+  geom_polygon(aes(x=long,y=lat,group=group,fill=fitted.values0),
+               #geom_polygon(aes(x=long,y=lat,group=group,fill=prob),
+               alpha=1,color="grey70",lwd=.5) +
+  scale_fill_gradientn(colors=c('lightblue','red','yellow'),
+                       values = scales::rescale(c(0, .09, .18, 0.25, 0.4)),
+                       #labels=percent,name=expression("Pr(DOME)"),
+                       limits=c(0,max(fit0$fitted,fit1$fitted))) +
+  coord_quickmap() + #coord_equal(ratio=1) +
+  theme_minimal() +
+  theme(axis.ticks.y = element_blank(),axis.text.y = element_blank(), # get rid of x ticks/text
+        axis.ticks.x = element_blank(),axis.text.x = element_blank(), # get rid of y ticks/text
+        plot.title = element_text(lineheight=.8, face="bold", vjust=1, hjust = .5),
+        plot.caption = element_text(hjust=0)) + #labels
+  labs(title="Fitted Probability of Domestic Abuse Call", x="", y="")
+```
+
+## differences
+
+```{r}
+max_diff <- max(arlFit$fitted.values - arlFit$fitted.values0, na.rm = TRUE)
+print(max_diff)
+
+ggplot(arlFit) + 
+  geom_polygon(aes(x = long,
+                   y = lat,
+                   group = group,
+                   fill = fitted.values - fitted.values0),
+               alpha = 1,
+               color = "grey70",
+               lwd = .5) +
+  scale_fill_viridis_c() +
+  coord_quickmap() + #coord_equal(ratio=1) +
+  theme_minimal() +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        plot.title = element_text(lineheight = .8,
+                                  face = "bold",
+                                  vjust = 1,
+                                  hjust = .5),
+        plot.caption = element_text(hjust = 0)) + #labels
+  labs(title = "Fitted Probability of Domestic Abuse Call",
+       x = "",
+       y = "")
+```
+
+GEOIDs of the "highest" differences
+
+```{r}
+arlFit %>%
+  dplyr::filter(fitted.values - fitted.values0 > .002) %>%
+  dplyr::select(GEOID) %>%
+  base::unique()
+```
+
+```{r}
+arlFit %>%
+  dplyr::filter(fitted.values - fitted.values0 < -.002) %>%
+  dplyr::select(GEOID) %>%
+  base::unique()
+```
+
+# Fitted vs Feature Plots
+
+```{r}
+feature = 'medInc'
+featureFitPlotData = data.table(getElement(fit1$data, feature), fit1$fitted.values)
+colnames(featureFitPlotData) = c(feature, "Pr(DOME)")
+ggplot(data = featureFitPlotData) + 
+  geom_point(aes(x = get(feature), y = `Pr(DOME)`)) + 
+  labs(x = feature)
+
+```
+
+```{r}
+for(i in names(fit1$coefficients)[-1]){
+  feature = i
+  featureFitPlotData = data.table(getElement(fit1$data, feature), fit1$fitted.values)
+  colnames(featureFitPlotData) = c(feature, "Pr(DOME)")
+  p = ggplot(data = featureFitPlotData) + 
+    geom_point(aes(x = get(feature), y = `Pr(DOME)`)) + 
+    labs(x = feature)
+  plot(p)
+}
