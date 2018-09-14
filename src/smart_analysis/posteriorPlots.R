@@ -41,7 +41,7 @@ dev.off()
 clAtrack = data.table(clAtrackPums[clAtrackPums$source != "PUMS",])
 pHat = fread("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP_householdSize_singleParent_snKid_militaryService_unmarriedPartner_multiGenHouse/logregFits.csv")
 
-houseLevelData = clAtrack[,.(LATITUDE, LONGITUDE, houseID)][simulation, on = "houseID"][pHat[, .(houseID, pHat = resample1)], on = "houseID"]
+houseLevelData = clAtrack[,.(VALP, LATITUDE, LONGITUDE, houseID)][simulation, on = "houseID"][pHat[, .(houseID, pHat = resample1)], on = "houseID"]
 
 # Probability plot
 pdf("./output/houseDOMEProbPlot.pdf", height = 4.5, width = 5)
@@ -80,17 +80,30 @@ dev.off()
 
 
 
-
+pdf("./output/houseVALPProbPlot.pdf", height = 4.5, width = 5)
 ggplot(arlFit) + 
-  geom_polygon(aes(x=long,y=lat,group=group,), alpha=0,color="grey70",lwd=.5) +
-  geom_point(data = houseLevelData, aes(x = LONGITUDE, y = LATITUDE, color = sqrtHINCP), size = .4) +
-  scale_color_gradient2("Sqrt Income", low = 'blue', mid = 'white', high = 'red', midpoint = median(houseLevelData$sqrtHINCP)) +
+  geom_polygon(aes(x=long,y=lat,group=group), alpha=0,color="grey70",lwd=.5) +
+  geom_point(data = na.omit(houseLevelData), aes(x = LONGITUDE, y = LATITUDE, color = VALP), size = .4) +
+  scale_color_gradient2("Home Value", low = 'blue', mid = 'white', high = 'red', midpoint = median(houseLevelData$VALP, na.rm = TRUE), guide = FALSE) +
   coord_quickmap() + 
   theme_minimal() +
   theme(axis.ticks.y = element_blank(),axis.text.y = element_blank(), # get rid of x ticks/text
         axis.ticks.x = element_blank(),axis.text.x = element_blank(), # get rid of y ticks/text
         plot.title = element_text(lineheight=.8, face="bold", vjust=1, hjust = .5),
         plot.caption = element_text(hjust=0)) + #labels
-  labs(title="Fitted Incomes", x="", y="") 
-
-
+  labs(title="Home Values", x="", y="") 
+dev.off()
+pdf("./output/houseVALPProbPlotZoomed.pdf", height = 4.5, width = 5)
+ggplot(arlFit) + 
+  geom_polygon(aes(x=long,y=lat,group=group), alpha=0,color="grey70",lwd=.5) +
+  geom_point(data = na.omit(houseLevelData), aes(x = LONGITUDE, y = LATITUDE, color = VALP), size = .4) +
+  scale_color_gradient2("Home Value", low = 'blue', mid = 'white', high = 'red', midpoint = median(houseLevelData$VALP, na.rm = TRUE), guide = FALSE) +
+  coord_quickmap() + 
+  theme_minimal() +
+  coord_cartesian(xlim = c(-77.14, -77.1), ylim = c(38.85, 38.87)) +
+  theme(axis.ticks.y = element_blank(),axis.text.y = element_blank(), # get rid of x ticks/text
+        axis.ticks.x = element_blank(),axis.text.x = element_blank(), # get rid of y ticks/text
+        axis.title = element_blank(),
+        plot.title = element_text(lineheight=.8, face="bold", vjust=1, hjust = .5),
+        plot.caption = element_text(hjust=0)) 
+dev.off()
