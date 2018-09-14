@@ -33,3 +33,26 @@ basel_dat %>% head(5)
 
 saveRDS(smart_dat, './data/mitre/final/logistic_regressions/smart_data_coefs.RDS')
 saveRDS(basel_dat, './data/mitre/final/logistic_regressions/basel_data_coefs.RDS')
+
+## data for maps
+
+bgs <- y_smart_fits[[1]]$data$blockGroup
+
+smart_fitted_values <- lapply(y_smart_fits, function(x) x$fitted.values) %>%
+  do.call(rbind, .) %>%
+  apply(MARGIN = 2, mean)
+
+basel_fitted_values <- lapply(n_smart_fits, function(x) x$fitted.values) %>%
+  do.call(rbind, .) %>%
+  apply(MARGIN = 2, mean)
+
+
+p_fitted <- tibble::tibble(bg = bgs) %>%
+  dplyr::mutate(
+    smart_fitted = smart_fitted_values,
+    basel_fitted = basel_fitted_values,
+    delta_fitted = smart_fitted - basel_fitted,
+    bg = as.character(bg)
+  )
+
+saveRDS(p_fitted, './data/mitre/final/logistic_regressions/fitted_values_block_group.RDS')
