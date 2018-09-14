@@ -1,0 +1,78 @@
+---
+title: "SMART Maps"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(here)
+library(dplyr)
+library(ggplot2)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+y_smart_fits <- readRDS(here('data/mitre/final/logistic_regressions/fit_smart.RDS'))
+n_smart_fits <- readRDS(here('data/mitre/final/logistic_regressions/fit_notSmart.RDS'))
+```
+
+
+```{r}
+## Summarize data for maps
+
+bgs <- y_smart_fits[[1]]$data$blockGroup
+
+smart_fitted_values <- lapply(y_smart_fits, function(x) x$fitted.values) %>%
+  do.call(rbind, .) %>%
+  apply(MARGIN = 2, mean)
+
+basel_fitted_values <- lapply(n_smart_fits, function(x) x$fitted.values) %>%
+  do.call(rbind, .) %>%
+  apply(MARGIN = 2, mean)
+
+
+p_fitted <- tibble::tibble(bg = bgs) %>%
+  dplyr::mutate(
+    smart_fitted = smart_fitted_values,
+    basel_fitted = basel_fitted_values,
+    delta_fitted = smart_fitted - basel_fitted,
+    bg = as.character(bg)
+  )
+
+```
+
+```{r}
+library(tigris)
+library(sf)
+options(tigris_class = "sf")
+options(tigris_use_cache = TRUE)
+
+va_bgs <- tigris::block_groups('VA', county = 'Arlington County')
+
+ggplot(va_bgs) + geom_sf()
+
+va_bgs <- va_bgs %>%
+  mutate(tbg = paste0(as.character(TRACTCE), as.character(BLKGRPCE))) %>%
+  full_join(p_fitted, by = c('tbg' = 'bg'))
+
+
+ggplot(va_bgs) +
+  geom_sf(aes(fill = smart_fitted)) +
+  scale_fill_viridis_c() +
+  ggtitle('SMART SCATTER: Fitted Probability of Domestic Abuse Call')
+
+ggplot(va_bgs) +
+  geom_sf(aes(fill = basel_fitted)) +
+  scale_fill_viridis_c() +
+  ggtitle('BASELINE: Fitted Probability of Domestic Abuse Call')
+
+hist(va_bgs$delta_fitted)
+
+ggplot(va_bgs) + geom_histogram(aes(x = delta_fitted))
+
+ggplot(va_bgs) +
+  geom_sf(aes(fill = delta_fitted)) +
+  scale_fill_viridis_c() +
+  ggtitle('DELTA: Fitted Probability of Domestic Abuse Call')
+
+```

@@ -9,9 +9,6 @@ source('./R/smart_analysis.R')
 y_smart_fits <- readRDS(here('data/mitre/final/logistic_regressions/fit_smart.RDS'))
 n_smart_fits <- readRDS(here('data/mitre/final/logistic_regressions/fit_notSmart.RDS'))
 
-#fit0 <- readRDS(here('./data/mitre/working/logistic_regressions/example_fit0.RDS'))
-#fit1 <- readRDS(here('./data/mitre/working/logistic_regressions/example_fit1.RDS'))
-
 # make sure all the coefficients are in the same order
 coef_names_smart <- lapply(y_smart_fits, function(x) names(x$coefficients))
 stopifnot(all(unlist(lapply(coef_names_smart, all.equal, coef_names_smart[[1]]))))
