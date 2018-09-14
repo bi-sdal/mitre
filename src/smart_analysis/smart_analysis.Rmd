@@ -74,6 +74,33 @@ ggsave(here('./output/smart_analysis/plots/coefs_jitter_basel.pdf'), height = 5,
 ```
 
 ```{r}
+smart_basel_dat <- smart_dat %>%
+  mutate(type = 'ss')
+
+smart_basel_dat <- rbind(smart_basel_dat, basel_dat %>% mutate(type = 'bl'))
+
+smart_basel_dat %>%
+  ggplot() +
+  geom_jitter(aes(x = estimate_scaled, y = term, color = type), alpha = .05)
+```
+
+```{r}
+bl_mean <- basel_dat %>%
+  dplyr::group_by(term) %>%
+  summarize(est_scaled_mean = mean(estimate_scaled))
+```
+
+
+```{r}
+ggplot() +
+  geom_jitter(data = smart_dat, aes(x = estimate_scaled, y = term), alpha = .1, width = 0) +
+  geom_point(data = bl_mean, aes(x = est_scaled_mean, y = term), color = 'red', size = 5)
+ggsave(here('./output/smart_analysis/plots/coefs_jitter_smart_basel.pdf'), width = 5, height = 4, dpi = 300)
+```
+
+
+
+```{r}
 plot_sim_dat_hist(smart_dat, 'estimate_scaled', 'SMART SCATTER: Distribution of simulated coefficients')
 plot_sim_dat_hist(basel_dat, 'estimate_scaled', 'BASELINE: Distribution of simulated coefficients')
 ```
