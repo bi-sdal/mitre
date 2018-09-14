@@ -6,12 +6,12 @@ source("./src/SMARTscatter/parameterFiles/allDataFullRuns.R")
 
 resamples = rbindlist(lapply(bgs, function(bg) fread(sprintf("%s/bg_%s/resamples.csv", featurePath, bg))))
 
-assignmentPaths = list.files("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP_householdSize_singleParent_snKid_milWoman_unmarriedPartner_multiGenHouse/", pattern= "Assignments")
+assignmentPaths = list.files(featurePath, pattern= "Assignments")
 assignments = lapply(assignmentPaths, function(x) fread(paste0(featurePath, "/",x)))
 
 # Logreg for child abuse
 
-logisticRegressions <- lapply(1:nDraws, function(x){
+logisticRegressions <- lapply(1:10, function(x){
   rsName = paste0('resample', x)
   X = suppressMessages(dcast(resamples[,.(houseID, feature, get(rsName))], houseID ~ feature))
   
@@ -25,6 +25,19 @@ logisticRegressions <- lapply(1:nDraws, function(x){
   out = glm(fmla, data = data, family = binomial, model = FALSE)
   return(list(coefs = coefficients(out), p_hat = fitted(out)))
 })
+
+# All DOME cases
+
+coefs = sapply(logisticRegressions, function(x) return(x$coefs))
+colnames(coefs) = paste0('resample', 1:10)
+fits = cbind(unique(resamples$houseID), sapply(logisticRegressions, function(x) return(x$p_hat)))
+colnames(fits) = c("houseID", paste0('resample', 1:10))
+write.csv(coefs, "./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP_householdSize_singleParent_snKid_militaryService_unmarriedPartner_multiGenHouse/logregCoefs.csv", row.names = FALSE)
+write.csv(fits, "./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP_householdSize_singleParent_snKid_militaryService_unmarriedPartner_multiGenHouse/logregFits.csv", row.names = FALSE)
+
+
+
+
 
 # Extract coefficients and fits
 

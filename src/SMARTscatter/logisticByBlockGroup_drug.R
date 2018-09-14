@@ -37,9 +37,9 @@ housingACSbg <- read.csv('./data/mitre/working/MiscData/housingACSbg.csv',string
 assignments = fread("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP/caseAssignments.csv")
 
 ## make a house and blockgroup object
-resamples %>% arrange(houseID,desc(feature)) -> resamples
-resamples %>% select(houseID,blockGroup) %>% group_by(houseID) %>%
-  summarize(blockGroup=first(blockGroup)) -> datHouseBG
+resamples %>% dplyr::arrange(houseID,desc(feature)) -> resamples
+resamples %>% dplyr::select(houseID,blockGroup) %>% dplyr::group_by(houseID) %>%
+  dplyr::summarize(blockGroup=first(blockGroup)) -> datHouseBG
 
 ## make a N x p x nreal object holding sampled realizations
 nreal <- ncol(resamples) - 3   # number of synthetic realizations

@@ -17,7 +17,7 @@ source("./src/SMARTscatter/01-prepareAndLoadData.R")
 nImputations = 1200
 nDraws = 600
 regCols = c('VALP', 'TAXP2')
-imputationColumns = c("sqrtHINCP", "RMSP", "householdSize", 'singleParent', 'snKid', 'milWoman', 'unmarriedPartner', 'multiGenHouse')
+imputationColumns = c("sqrtHINCP", "RMSP", "householdSize", 'singleParent', 'snKid', 'militaryService', 'unmarriedPartner', 'multiGenHouse')
 regMethods = c('norm', 'norm')
 imputationMethods = c('norm', 'cart', 'cart', 'cart', 'logreg', 'logreg', 'logreg', 'logreg')
 miceMethods = c(imputationMethods, regMethods)
