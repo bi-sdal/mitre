@@ -67,7 +67,10 @@ xlim1 <- floor(min(smart_dat$estimate_scaled, basel_dat$estimate_scaled))
 xlim2 <- ceiling(max(smart_dat$estimate_scaled, basel_dat$estimate_scaled))
 
 plot_sim_dat_jitter(smart_dat, 'estimate_scaled', 'SMART SCATTER: Coefficients for the Sumulation Runs', xlim = c(xlim1, xlim2))
+ggsave(here('./output/smart_analysis/plots/coefs_jitter_smart.pdf'), height = 5, width = 8, dpi = 300)
+
 plot_sim_dat_jitter(basel_dat, 'estimate_scaled', 'BASELINE: Coefficients for the Sumulation Runs', xlim = c(xlim1, xlim2))
+ggsave(here('./output/smart_analysis/plots/coefs_jitter_basel.pdf'), height = 5, width = 8, dpi = 300)
 ```
 
 ```{r}
