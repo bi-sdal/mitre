@@ -1,4 +1,4 @@
-
+library(stringr)
 #
 # Imputation and resampling Functions
 #
@@ -209,4 +209,26 @@ assignCasesToHouse = function(probInHouseList, nDraws){
   }
   colnames(out) = paste0("resample", 1:nDraws)
   return(data.table(Call_No = caseNos, out)) 
+}
+
+# Functions to load data from resample files
+
+getResampleByIndex = function(path, resampleIndex){
+  bgs = list.files(path) %>%
+    str_extract("\\d{7}$") %>%
+    na.omit %>%
+    as.numeric
+  resamples = lapply(bgs, function(bg){
+    tmp = fread(sprintf("%sbg_%s/imputations.csv", path, bg))[,.(houseID, feature, get(sprintf("imputation%s", resampleIndex)))]
+    out = data.table(dcast(tmp, houseID ~ feature, value.var = "V3"), blockGroup = bg)
+    return(out)
+  })
+  return(rbindlist(resamples))
+}
+
+getResamplesByBG = function(path, blockGroup){
+  
+  bgResamples = fread(sprintf("%sbg_%s/resamples.csv", path, blockGroup))
+  return(data.table(bgResamples, blockGroup = blockGroup))
+  
 }
