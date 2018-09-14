@@ -8,71 +8,100 @@ editor_options:
 ```{r setup, include=FALSE}
 library(here)
 library(dplyr)
-library(ggplot2)
-
-knitr::opts_chunk$set(echo = TRUE)
-
-y_smart_fits <- readRDS(here('data/mitre/final/logistic_regressions/fit_smart.RDS'))
-n_smart_fits <- readRDS(here('data/mitre/final/logistic_regressions/fit_notSmart.RDS'))
-```
-
-
-```{r}
-## Summarize data for maps
-
-bgs <- y_smart_fits[[1]]$data$blockGroup
-
-smart_fitted_values <- lapply(y_smart_fits, function(x) x$fitted.values) %>%
-  do.call(rbind, .) %>%
-  apply(MARGIN = 2, mean)
-
-basel_fitted_values <- lapply(n_smart_fits, function(x) x$fitted.values) %>%
-  do.call(rbind, .) %>%
-  apply(MARGIN = 2, mean)
-
-
-p_fitted <- tibble::tibble(bg = bgs) %>%
-  dplyr::mutate(
-    smart_fitted = smart_fitted_values,
-    basel_fitted = basel_fitted_values,
-    delta_fitted = smart_fitted - basel_fitted,
-    bg = as.character(bg)
-  )
-
-```
-
-```{r}
 library(tigris)
 library(sf)
+library(ggplot2)
+
 options(tigris_class = "sf")
 options(tigris_use_cache = TRUE)
 
-va_bgs <- tigris::block_groups('VA', county = 'Arlington County')
+#ggplot2::theme_set(theme_bw())
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.width = 5, fig.height = 5
+                      )
 
-ggplot(va_bgs) + geom_sf()
+p_fitted <- readRDS(here('./data/mitre/final/logistic_regressions/fitted_values_block_group.RDS'))
+
+my_map_theme <- function() {
+  ggplot2::theme(
+    axis.line = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text = element_blank(),
+    panel.grid = element_line(colour = 'transparent'),
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+  )
+}
+
+```
+
+```{r}
+va_bgs <- tigris::block_groups('VA', county = 'Arlington County')
 
 va_bgs <- va_bgs %>%
   mutate(tbg = paste0(as.character(TRACTCE), as.character(BLKGRPCE))) %>%
   full_join(p_fitted, by = c('tbg' = 'bg'))
+```
 
+```{r}
+arl_bg_ref <- ggplot(va_bgs) + geom_sf() + my_map_theme()
+ggsave(here('./output/smart_analysis/plots/maps/arl_bg_ref.pdf'), plot = arl_bg_ref, width = 5, height = 5, units = 'in', dpi = 300)
+arl_bg_ref
+```
 
-ggplot(va_bgs) +
+```{r}
+max_fitted_value <- max(va_bgs$smart_fitted, va_bgs$basel_fitted, na.rm = TRUE)
+legend_max <- max_fitted_value
+
+g_fitted_p_smart <- ggplot(va_bgs) +
   geom_sf(aes(fill = smart_fitted)) +
-  scale_fill_viridis_c() +
-  ggtitle('SMART SCATTER: Fitted Probability of Domestic Abuse Call')
+  scale_fill_viridis_c("Probability", limits = c(0, legend_max)) +
+  ggtitle('Fitted Probability of Domestic Abuse Call', subtitle = 'Smart Scatter') +
+  my_map_theme() +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(3, "line")
+  )
+ggsave(here('./output/smart_analysis/plots/maps/fitted_p_smart.pdf'), plot = g_fitted_p_smart, width = 5, height = 5, units = 'in', dpi = 300)
+g_fitted_p_smart
 
-ggplot(va_bgs) +
+g_fitted_p_basel <- ggplot(va_bgs) +
   geom_sf(aes(fill = basel_fitted)) +
-  scale_fill_viridis_c() +
-  ggtitle('BASELINE: Fitted Probability of Domestic Abuse Call')
+  scale_fill_viridis_c("Probability", limits = c(0, legend_max)) +
+  ggtitle('Fitted Probability of Domestic Abuse Call', subtitle = 'Baseline') +
+  my_map_theme() +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(3, "line")
+  )
+ggsave(here('./output/smart_analysis/plots/maps/fitted_p_basel.pdf'), plot = g_fitted_p_smart, width = 5, height = 5, units = 'in', dpi = 300)
+g_fitted_p_basel
+```
 
-hist(va_bgs$delta_fitted)
+```{r, fig.width=8, fig.height=5}
+g_fitted_p_delta_hist <- ggplot(va_bgs) + geom_histogram(aes(x = delta_fitted),
+                                bins = 15) +
+  theme_bw() +
+  ggtitle('Distribution of differences', subtitle = 'Delta') +
+  xlab('Probability (difference)') +
+  ylab('Count')
+ggsave(here('./output/smart_analysis/plots/fitted_p_delta_hist.pdf'), plot = g_fitted_p_delta_hist, width = 8, height = 5, units = 'in', dpi = 300)
+g_fitted_p_delta_hist
+```
 
-ggplot(va_bgs) + geom_histogram(aes(x = delta_fitted))
+```{r}
+#lmin <- min(va_bgs$delta_fitted, na.rm = TRUE)
+#lmax <- max(va_bgs$delta_fitted, na.rm = TRUE)
 
-ggplot(va_bgs) +
+g_fitted_p_delta  <- ggplot(va_bgs) +
   geom_sf(aes(fill = delta_fitted)) +
-  scale_fill_viridis_c() +
-  ggtitle('DELTA: Fitted Probability of Domestic Abuse Call')
-
+  scale_fill_gradient2(expression(Delta~p),
+                       low = '#b2182b',
+                       high = '#2166ac'
+  ) +
+  ggtitle('Fitted Probability of Domestic Abuse Call', subtitle = 'Delta') +
+  my_map_theme() +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(4, "line")
+  )
+ggsave(here('./output/smart_analysis/plots/maps/fitted_p_delta.pdf'), plot = g_fitted_p_delta, width = 5, height = 5, units = 'in', dpi = 300)
+g_fitted_p_delta
 ```
