@@ -1,7 +1,7 @@
 ---
 title: "Smart Analysis"
-author: "Daniel Chen"
-date: "9/7/2018"
+#author: "Daniel Chen"
+#date: ""
 output: 
   html_document: 
     number_sections: yes
@@ -10,259 +10,107 @@ editor_options:
   chunk_output_type: console
 ---
 
-```{r setup, include=FALSE}
+```{r setup, message=FALSE, warning=FALSE}
 library(here)
-knitr::opts_chunk$set(echo = TRUE,
-                      fig.width = 8, fig.height = 5 # golden ratio
-                      )
-
-# disable scientific notation
-options(scipen = 999)
-```
-
-```{r}
-smart_coefficients <- readRDS(here('data/mitre/final/logistic_regressions/coefficients.RDS'))
-smart_deviances <- readRDS(here('data/mitre/final/logistic_regressions/deviance.RDS'))
-fit0 <- readRDS(here('./data/mitre/working/logistic_regressions/example_fit0.RDS'))
-fit1 <- readRDS(here('./data/mitre/working/logistic_regressions/example_fit1.RDS'))
-```
-
-```{r}
 library(broom)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(data.table)
+library(printr) # make tables print prettier
 
 ggplot2::theme_set(theme_bw())
-```
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.width = 8, fig.height = 5 # golden ratio
+                      )
 
-```{r}
-# get order of coefficient names
-coef_names <- tidy(fit1)$term
-smart_coefficients <- tibble::as_tibble(t(smart_coefficients))
-names(smart_coefficients) <- coef_names
-```
+# control how numbers are printed
+options(scipen = 7, # penalty for showing decimal values in scientific notation (999 to disable)
+        digits = 4 # number of sig figs
+)
 
-```{r}
-smart_coefficients$sim_num <- 1:nrow(smart_coefficients)
-
-tidy_coefs <- smart_coefficients %>%
-  tidyr::gather(key = 'variable',
-         value = 'coefficient',
-         `(Intercept)`:militaryService) %>%
-  dplyr::mutate(or = exp(coefficient))
+source(here('./R/smart_analysis.R'))
+smart_dat <- readRDS(here('./data/mitre/final/logistic_regressions/smart_data_coefs.RDS'))
+basel_dat <- readRDS(here('./data/mitre/final/logistic_regressions/basel_data_coefs.RDS'))
 ```
 
 # Logistic Regression
 
 ## Coefficients
 
-Jittered scatter plot of the coefficients from simulation runs
+### Coefficient Summary Statistics
 
 ```{r}
-ggplot(tidy_coefs) +
-  geom_jitter(aes(x = coefficient, y = as.factor(variable)), alpha = .1) +
-  ggtitle('Coefficients for the Simulation Runs')
+summary_coefs(smart_dat, col = 'estimate_scaled')
 ```
 
 ```{r}
-ggplot(tidy_coefs) +
-  geom_histogram(aes(x = coefficient)) +
-  facet_wrap(~as.factor(variable)) +
-  ggtitle('Distribution of simulated coefficients')
+summary_coefs(basel_dat, col = 'estimate_scaled')
 ```
 
-## Prop g 0
+### OR Summary Statistics
 
 ```{r}
-tidy_coefs %>%
-  group_by(variable) %>%
-  summarize(n = n(),
-         num_g_0 = sum(coefficient > 0),
-         pro_g_0 = num_g_0 / n)
+summary_coefs(smart_dat, 'or_scaled')
 ```
-
-## prop l 0
 
 ```{r}
-tidy_coefs %>%
-  group_by(variable) %>%
-  summarize(n = n(),
-         num_l_0 = sum(coefficient < 0),
-         pro_l_0 = num_l_0 / n)
+summary_coefs(basel_dat, 'or_scaled')
 ```
 
-## "peaky"
+### Plots
+
+Jittered scatter plot of the coefficients from simulation runs (only along y)
 
 ```{r}
-ggplot(dplyr::filter(tidy_coefs, variable == 'DRUGrate')) +
-  geom_histogram(aes(x = coefficient)) +
-  ggtitle('Distribution of DRUGrate')
-```
+xlim1 <- floor(min(smart_dat$estimate_scaled, basel_dat$estimate_scaled))
+xlim2 <- ceiling(max(smart_dat$estimate_scaled, basel_dat$estimate_scaled))
 
+plot_sim_dat_jitter(smart_dat, 'estimate_scaled', 'SMART SCATTER: Coefficients for the Sumulation Runs', xlim = c(xlim1, xlim2))
+plot_sim_dat_jitter(basel_dat, 'estimate_scaled', 'BASELINE: Coefficients for the Sumulation Runs', xlim = c(xlim1, xlim2))
+```
 
 ```{r}
-ggplot(dplyr::filter(tidy_coefs, variable == 'householdSize')) +
-  geom_histogram(aes(x = coefficient)) +
-  ggtitle('Distribution of householdSize')
+plot_sim_dat_hist(smart_dat, 'estimate_scaled', 'SMART SCATTER: Distribution of simulated coefficients')
+plot_sim_dat_hist(basel_dat, 'estimate_scaled', 'BASELINE: Distribution of simulated coefficients')
 ```
 
+### Proportion > 0
 
 ```{r}
-ggplot(dplyr::filter(tidy_coefs, variable == 'medInc')) +
-  geom_histogram(aes(x = coefficient)) +
-  ggtitle('Distribution of medInc')
+prop_0(smart_dat, 'estimate_scaled', '>0')
+prop_0(smart_dat, 'estimate_scaled', '<0')
 ```
 
+
+### Proportion < 0
 
 ```{r}
-ggplot(dplyr::filter(tidy_coefs, variable == 'RMSP')) +
-  geom_histogram(aes(x = coefficient)) +
-  ggtitle('Distribution of RMSP')
+prop_0(basel_dat, 'estimate_scaled', '>0')
+prop_0(basel_dat, 'estimate_scaled', '<0')
 ```
-
 
 ## Odds Ratios
 
 ```{r}
-g <- ggplot(tidy_coefs) +
-  geom_jitter(aes(x = or, y = as.factor(variable)), alpha = .1)
-g +  ggtitle('ORs for the Simulation Runs')
-```
-
-```{r}
-g +
-  xlim(0, 5)  +
-  ggtitle('Truncated ORs')
-```
-
-Disribution of ORs
-
-```{r}
-ggplot(tidy_coefs) +
-  geom_histogram(aes(x = or)) +
-  facet_wrap(~variable) +
-  ggtitle('Distrubution of ORs')
+xlim2 <- ceiling(max(smart_dat$or_scaled, basel_dat$or_scaled))
 ```
 
 
-
 ```{r}
-ggplot(dplyr::filter(tidy_coefs, or < 5)) +
-  geom_histogram(aes(x = or), bins = 50) +
-  facet_wrap(~variable) +
-  ggtitle('Truncated Distrubutions')
-```
-
-# Maps
-
-```{r}
-arlFit <- readRDS(here('./data/mitre/final/smart_maps/fitted_prob_data.RDS'))
+plot_sim_dat_jitter(smart_dat, 'or_scaled', 'SMART SCATTER: ORs for the simulation runs', xlim = c(0, xlim2), vline = 1)
 ```
 
 ```{r}
-ggplot(arlFit) + 
-  geom_polygon(aes(x=long,y=lat,group=group,fill=fitted.values),
-               #geom_polygon(aes(x=long,y=lat,group=group,fill=prob),
-               alpha=1,color="grey70",lwd=.5) +
-  scale_fill_gradientn(colors=c('lightblue','red','yellow'),
-                       values = scales::rescale(c(0, .09, .18, 0.25, 0.4)),
-                       #labels=percent,name=expression("Pr(DOME)"),
-                       limits=c(0,max(fit0$fitted,fit1$fitted))) +
-  coord_quickmap() + #coord_equal(ratio=1) +
-  theme_minimal() +
-  theme(axis.ticks.y = element_blank(),axis.text.y = element_blank(), # get rid of x ticks/text
-        axis.ticks.x = element_blank(),axis.text.x = element_blank(), # get rid of y ticks/text
-        plot.title = element_text(lineheight=.8, face="bold", vjust=1, hjust = .5),
-        plot.caption = element_text(hjust=0)) + #labels
-  labs(title="Fitted Probability of Domestic Abuse Call", x="", y="")
+plot_sim_dat_jitter(basel_dat, 'or_scaled', 'BASELINE: ORs for the simulation runs', xlim = c(0, xlim2), vline = 1)
 ```
 
+### Disribution of ORs
+
 ```{r}
-ggplot(arlFit) + 
-  geom_polygon(aes(x=long,y=lat,group=group,fill=fitted.values0),
-               #geom_polygon(aes(x=long,y=lat,group=group,fill=prob),
-               alpha=1,color="grey70",lwd=.5) +
-  scale_fill_gradientn(colors=c('lightblue','red','yellow'),
-                       values = scales::rescale(c(0, .09, .18, 0.25, 0.4)),
-                       #labels=percent,name=expression("Pr(DOME)"),
-                       limits=c(0,max(fit0$fitted,fit1$fitted))) +
-  coord_quickmap() + #coord_equal(ratio=1) +
-  theme_minimal() +
-  theme(axis.ticks.y = element_blank(),axis.text.y = element_blank(), # get rid of x ticks/text
-        axis.ticks.x = element_blank(),axis.text.x = element_blank(), # get rid of y ticks/text
-        plot.title = element_text(lineheight=.8, face="bold", vjust=1, hjust = .5),
-        plot.caption = element_text(hjust=0)) + #labels
-  labs(title="Fitted Probability of Domestic Abuse Call", x="", y="")
+plot_sim_dat_hist(smart_dat, 'or_scaled', 'SMART SCATTER: Distribution of ORs') +
+  geom_vline(aes(xintercept = 1), color = 'red')
+
+plot_sim_dat_hist(basel_dat, 'or_scaled', 'BASELINE: Distribution of ORs') +
+  geom_vline(aes(xintercept = 1), color = 'red')
 ```
-
-## differences
-
-```{r}
-max_diff <- max(arlFit$fitted.values - arlFit$fitted.values0, na.rm = TRUE)
-print(max_diff)
-
-ggplot(arlFit) + 
-  geom_polygon(aes(x = long,
-                   y = lat,
-                   group = group,
-                   fill = fitted.values - fitted.values0),
-               alpha = 1,
-               color = "grey70",
-               lwd = .5) +
-  scale_fill_viridis_c() +
-  coord_quickmap() + #coord_equal(ratio=1) +
-  theme_minimal() +
-  theme(axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.x = element_blank(),
-        plot.title = element_text(lineheight = .8,
-                                  face = "bold",
-                                  vjust = 1,
-                                  hjust = .5),
-        plot.caption = element_text(hjust = 0)) + #labels
-  labs(title = "Fitted Probability of Domestic Abuse Call",
-       x = "",
-       y = "")
-```
-
-GEOIDs of the "highest" differences
-
-```{r}
-arlFit %>%
-  dplyr::filter(fitted.values - fitted.values0 > .002) %>%
-  dplyr::select(GEOID) %>%
-  base::unique()
-```
-
-```{r}
-arlFit %>%
-  dplyr::filter(fitted.values - fitted.values0 < -.002) %>%
-  dplyr::select(GEOID) %>%
-  base::unique()
-```
-
-# Fitted vs Feature Plots
-
-```{r}
-feature = 'medInc'
-featureFitPlotData = data.table(getElement(fit1$data, feature), fit1$fitted.values)
-colnames(featureFitPlotData) = c(feature, "Pr(DOME)")
-ggplot(data = featureFitPlotData) + 
-  geom_point(aes(x = get(feature), y = `Pr(DOME)`)) + 
-  labs(x = feature)
-
-```
-
-```{r}
-for(i in names(fit1$coefficients)[-1]){
-  feature = i
-  featureFitPlotData = data.table(getElement(fit1$data, feature), fit1$fitted.values)
-  colnames(featureFitPlotData) = c(feature, "Pr(DOME)")
-  p = ggplot(data = featureFitPlotData) + 
-    geom_point(aes(x = get(feature), y = `Pr(DOME)`)) + 
-    labs(x = feature)
-  plot(p)
-}
