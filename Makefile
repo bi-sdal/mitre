@@ -12,6 +12,8 @@ smart_analysis_data:
 ## smart_analysis            : plots and figures from smart scatter
 .PHONY : smart_analysis
 smart_analysis:
+	find . -type f -name 'smart_analysis.html' -delete
+	Rscript src/smart_analysis/01-clean_for_analysis.R
 	Rscript -e "rmarkdown::render('./src/smart_analysis/smart_analysis.Rmd', output_dir = 'output/smart_analysis/')"
 
 #
