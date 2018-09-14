@@ -61,7 +61,7 @@ g_fitted_p_smart <- ggplot(va_bgs) +
   theme(legend.position = "bottom",
         legend.key.width = unit(3, "line")
   )
-ggsave(here('./output/smart_analysis/plots/maps/fitted_p_smart.pdf'), plot = g_fitted_p_smart, width = 5, height = 5, units = 'in', dpi = 300)
+ggsave(here('./output/smart_analysis/plots/maps/fitted_p_smart.pdf'), width = 5, height = 5, units = 'in', dpi = 300)
 g_fitted_p_smart
 
 g_fitted_p_basel <- ggplot(va_bgs) +
@@ -72,7 +72,7 @@ g_fitted_p_basel <- ggplot(va_bgs) +
   theme(legend.position = "bottom",
         legend.key.width = unit(3, "line")
   )
-ggsave(here('./output/smart_analysis/plots/maps/fitted_p_basel.pdf'), plot = g_fitted_p_smart, width = 5, height = 5, units = 'in', dpi = 300)
+ggsave(here('./output/smart_analysis/plots/maps/fitted_p_basel.pdf'), width = 5, height = 5, units = 'in', dpi = 300)
 g_fitted_p_basel
 ```
 
@@ -83,7 +83,7 @@ g_fitted_p_delta_hist <- ggplot(va_bgs) + geom_histogram(aes(x = delta_fitted),
   ggtitle('Distribution of differences', subtitle = 'Delta') +
   xlab('Probability (difference)') +
   ylab('Count')
-ggsave(here('./output/smart_analysis/plots/fitted_p_delta_hist.pdf'), plot = g_fitted_p_delta_hist, width = 8, height = 5, units = 'in', dpi = 300)
+ggsave(here('./output/smart_analysis/plots/fitted_p_delta_hist.pdf'), width = 8, height = 5, units = 'in', dpi = 300)
 g_fitted_p_delta_hist
 ```
 
@@ -102,6 +102,6 @@ g_fitted_p_delta  <- ggplot(va_bgs) +
   theme(legend.position = "bottom",
         legend.key.width = unit(4, "line")
   )
-ggsave(here('./output/smart_analysis/plots/maps/fitted_p_delta.pdf'), plot = g_fitted_p_delta, width = 5, height = 5, units = 'in', dpi = 300)
+ggsave(here('./output/smart_analysis/plots/maps/fitted_p_delta.pdf'), width = 5, height = 5, units = 'in', dpi = 300)
 g_fitted_p_delta
 ```
