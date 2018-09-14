@@ -43,4 +43,54 @@ pHat = fread("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP
 
 houseLevelData = clAtrack[,.(LATITUDE, LONGITUDE, houseID)][simulation, on = "houseID"][pHat[, .(houseID, pHat = resample1)], on = "houseID"]
 
-fwrite(houseLevelData, "./data/mitre/working/smart_analysis/houseLevelPlotData.csv")
+# Probability plot
+
+arlFit <- readRDS('./data/mitre/final/smart_maps/fitted_prob_data.RDS')
+ggplot(arlFit) + 
+  geom_polygon(aes(x=long,y=lat,group=group,), alpha=0,color="grey70",lwd=.5) +
+  geom_point(data = houseLevelData, aes(x = LONGITUDE, y = LATITUDE, color = pHat), size = .4) +
+  scale_color_gradient2("Fitted Probability",
+                        breaks = round(unname(quantile(houseLevelData$pHat, prob = c(.00009, .0009, .009, .09, .9, .999999))), 6), 
+                        low = 'blue', mid = 'white', high = 'red', midpoint = -3.5, trans = 'log') +
+  coord_quickmap() + 
+  theme_minimal() +
+  theme(axis.ticks.y = element_blank(),axis.text.y = element_blank(), # get rid of x ticks/text
+        axis.ticks.x = element_blank(),axis.text.x = element_blank(), # get rid of y ticks/text
+        plot.title = element_text(lineheight=.8, face="bold", vjust=1, hjust = .5),
+        plot.caption = element_text(hjust=0)) + #labels
+  labs(title="Fitted Probability of Domestic Abuse Call", x="", y="") 
+
+# Same but zoomed in
+
+ggplot(arlFit) + 
+  geom_polygon(aes(x=long,y=lat,group=group,), alpha=0,color="grey70",lwd=.5) +
+  geom_point(data = houseLevelData, aes(x = LONGITUDE, y = LATITUDE, color = pHat), size = 1.2) +
+  scale_color_gradient2("Fitted Probability",breaks = unname(quantile(houseLevelData$pHat, prob = c(.00009, .0009, .009, .09, .9, .999999))), low = 'blue', mid = 'white', high = 'red', midpoint = -7, trans = 'log', guide = FALSE) +
+  #coord_quickmap() + 
+  theme_minimal() +
+  coord_cartesian(xlim = c(-77.14, -77.1), ylim = c(38.85, 38.87)) 
+  theme(axis.ticks.y = element_blank(),axis.text.y = element_blank(), # get rid of x ticks/text
+        axis.ticks.x = element_blank(),axis.text.x = element_blank(), # get rid of y ticks/text
+        plot.title = element_text(lineheight=.8, face="bold", vjust=1, hjust = .5),
+        plot.caption = element_text(hjust=0)) + #labels
+  labs(title="Fitted Probability of Domestic Abuse Call", x="", y="") +
+  coord_cartesian(xlim = c(-5000, 5000)) 
+
+
+
+
+
+
+ggplot(arlFit) + 
+  geom_polygon(aes(x=long,y=lat,group=group,), alpha=0,color="grey70",lwd=.5) +
+  geom_point(data = houseLevelData, aes(x = LONGITUDE, y = LATITUDE, color = sqrtHINCP), size = .4) +
+  scale_color_gradient2("Sqrt Income", low = 'blue', mid = 'white', high = 'red', midpoint = median(houseLevelData$sqrtHINCP)) +
+  coord_quickmap() + 
+  theme_minimal() +
+  theme(axis.ticks.y = element_blank(),axis.text.y = element_blank(), # get rid of x ticks/text
+        axis.ticks.x = element_blank(),axis.text.x = element_blank(), # get rid of y ticks/text
+        plot.title = element_text(lineheight=.8, face="bold", vjust=1, hjust = .5),
+        plot.caption = element_text(hjust=0)) + #labels
+  labs(title="Fitted Incomes", x="", y="") 
+
+

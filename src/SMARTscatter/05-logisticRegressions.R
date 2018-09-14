@@ -7,15 +7,14 @@ source("./src/SMARTscatter/parameterFiles/allDataFullRuns.R")
 resamples = rbindlist(lapply(bgs, function(bg) fread(sprintf("%s/bg_%s/resamples.csv", featurePath, bg))))
 
 assignmentPaths = list.files(featurePath, pattern= "Assignments")
-assignments = lapply(assignmentPaths, function(x) fread(paste0(featurePath, "/",x)))
-
-# Logreg for child abuse
+#assignments = lapply(assignmentPaths, function(x) fread(paste0(featurePath, "/",x)))
+assignments = fread("./data/mitre/working/imputationAndResamplingResults/sqrtHINCP_RMSP/caseAssignments.csv")
 
 logisticRegressions <- lapply(1:10, function(x){
   rsName = paste0('resample', x)
   X = suppressMessages(dcast(resamples[,.(houseID, feature, get(rsName))], houseID ~ feature))
   
-  y = unique(assignments[[1]][,.(Call_No, houseID = get(rsName))], by = 'houseID')
+  y = unique(assignments[,.(Call_No, houseID = get(rsName))], by = 'houseID')
   
   data = merge(X, data.table(houseID = y$houseID, caseInHouse = 1), all.x = TRUE)
   data[is.na(data)] = 0
