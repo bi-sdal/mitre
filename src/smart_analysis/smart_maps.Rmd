@@ -105,3 +105,47 @@ g_fitted_p_delta  <- ggplot(va_bgs) +
 ggsave(here('./output/smart_analysis/plots/maps/fitted_p_delta.pdf'), width = 5, height = 5, units = 'in', dpi = 300)
 g_fitted_p_delta
 ```
+
+# Delta analysis
+
+```{r}
+high_delta <- va_bgs %>%
+  mutate(
+    high_low_delta = dplyr::case_when(delta_fitted > .01 ~ 'high',
+                                      delta_fitted < -.005 ~ 'low')
+  )
+
+hl_deltas <- high_delta %>%
+  filter(high_low_delta %in% c('high', 'low')) %>%
+  select(STATEFP:NAMELSAD, delta_fitted, high_low_delta) %>%
+  arrange(delta_fitted)
+hl_deltas
+
+saveRDS(hl_deltas, here('./data/mitre/working/logistic_regressions/high_low_deltas.RDS'))
+```
+
+low:
+
+- https://censusreporter.org/profiles/15000US510131018024-block-group-4-arlington-va/
+- https://censusreporter.org/profiles/15000US510131036021-block-group-1-arlington-va/
+- https://censusreporter.org/profiles/15000US510131036022-block-group-2-arlington-va/
+
+high:
+
+- https://censusreporter.org/profiles/15000US510131025003-block-group-3-arlington-va/
+- 
+
+```{r}
+cols <- c("low" = '#b2182b', "high" = '#2166ac')
+
+p_delta_selected <- ggplot(high_delta) +
+  geom_sf(aes(fill = high_low_delta)) +
+  scale_fill_manual(
+    values = cols,
+    na.value = 'lightgrey') +
+  my_map_theme() +
+  theme(legend.position = "none"
+  )
+ggsave(here('./output/smart_analysis/plots/maps/fitted_p_delta_selected.pdf'), width = 5, height = 5, units = 'in', dpi = 300)
+p_delta_selected
+```

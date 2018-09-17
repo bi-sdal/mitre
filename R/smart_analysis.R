@@ -68,7 +68,9 @@ prop_0 <- function(df, col, side) {
         group_by(term) %>%
         summarize(
             n = n(),
-            num = ifelse(side == '>0', sum(!!sym(col) > 0), sum(!!sym(col) < 0)),
+            num = ifelse(side == '>0',
+                         sum(!!sym(col) > 0, na.rm = TRUE),
+                         sum(!!sym(col) < 0, na.rm = TRUE)),
             prop = num / n
         )
 }
