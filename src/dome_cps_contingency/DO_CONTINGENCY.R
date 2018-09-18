@@ -12,3 +12,9 @@ colnames(twoWay) = c("zip", "cpsCount", "domeCount")
 
 . = fisher.test(as.matrix(twoWay[,.(cpsCount, domeCount)]), simulate.p.value = TRUE, B = 50000)
 .
+
+tmp = melt(twoWay, id.vars = 'zip')
+
+ggplot(data = tmp, aes(x = zip, fill = variable)) +
+  geom_bar(aes(y = (..count..) / sum(..count..)), position = 'dodge')
+
