@@ -1,10 +1,6 @@
-# 1) Source Parametersm init snowfall
+# 1) Source Parameters, init snowfall
 
 source("./src/SMARTscatter/parameterFiles/allDataFullRuns.R")
-
-#
-# RUN THE CODE
-#
 
 #
 # Snowfall init

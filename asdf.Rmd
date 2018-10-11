@@ -1,0 +1,36 @@
+---
+title: "fitted_vs_feature"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(here)
+library(data.table)
+library(ggplot2)
+
+knitr::opts_chunk$set(echo = TRUE)
+ggplot2::theme_set(theme_minimal())
+
+fit1 <- readRDS(here('./data/mitre/final/logistic_regressions/fit_smart.RDS'))
+```
+
+
+
+```{r}
+fit1 <- fit1[[1]]
+
+for(i in names(fit1$coefficients)[-1]){
+    feature = i
+    featureFitPlotData = data.table(getElement(fit1$data, feature), fit1$fitted.values)
+    colnames(featureFitPlotData) = c(feature, "Pr(DOME)")
+    p = ggplot(data = featureFitPlotData,
+               aes(x = get(feature), y = `Pr(DOME)`)) +
+      geom_point() +
+      geom_smooth(method = 'lm', se = FALSE) +
+      labs(x = feature)
+    plot(p)
+}
+
+```

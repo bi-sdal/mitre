@@ -101,6 +101,7 @@ stopCluster(myCluster)
 cfsDRUG2013$lat <- geocode_results$lat
 cfsDRUG2013$lng <- geocode_results$lng
 save(cfsDRUG2013,file='cfsDRUG2013.RData',ascii=TRUE)
+write.csv(cfsDRUG2013,'cfsDRUG2013.csv',quote=FALSE,row.names=FALSE)
 icourthouse <- ((cfsDRUG2013$lat==38.88988) & (cfsDRUG2013$lng==-77.08318))
 icourthouse <- cfsDRUG2013$Location=='1425 N COURTHOUSE RD'  #196 out of 571 (35%)
 #icourthouse <- cfsDOME2013$Location=='1425 N COURTHOUSE RD'  #50 out of 2000

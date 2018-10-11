@@ -4,7 +4,7 @@ library(mice)
 library(data.table)
 library(snowfall)
 source("./R/00-simulateArlFunctions.R")
-source("./R/geocode.R")
+#source("./src/SMARTscatter/R")
 
 #
 # Load prepared data
@@ -14,8 +14,8 @@ source("./src/SMARTscatter/01-prepareAndLoadData.R")
 
 
 # Define global parameters
-nImputations = 1200
-nDraws = 600
+nImputations = 5
+nDraws = 3
 regCols = c('VALP', 'TAXP2')
 imputationColumns = c("sqrtHINCP", "RMSP", "householdSize", 'singleParent', 'snKid', 'militaryService', 'unmarriedPartner', 'multiGenHouse')
 regMethods = c('norm', 'norm')
